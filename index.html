@@ -388,6 +388,7 @@ const next = new Int32Array(MAX);
 const px = new Float32Array(MAXP), py = new Float32Array(MAXP);
 const pvx = new Float32Array(MAXP), pvy = new Float32Array(MAXP);
 const plife = new Float32Array(MAXP), pteam = new Uint8Array(MAXP);
+const pz = new Float32Array(MAXP), pvz = new Float32Array(MAXP);
 let pNext = 0;
 
 // Arrows (ring buffer).
@@ -397,7 +398,7 @@ const qlife = new Float32Array(MAXQ), qteam = new Uint8Array(MAXQ);
 let qNext = 0;
 
 // Explosion rings (ring buffer).
-const rx = new Float32Array(MAXR), ry = new Float32Array(MAXR), rlife = new Float32Array(MAXR);
+const rx = new Float32Array(MAXR), ry = new Float32Array(MAXR), rlife = new Float32Array(MAXR), rsz = new Float32Array(MAXR);
 let rNext = 0;
 
 function resetPools() {
@@ -427,7 +428,8 @@ function puff(x, y, team, n, speed) {
     const j = pNext; pNext = (pNext + 1) % MAXP;
     const a = Math.random() * TAU, s = speed * (0.3 + Math.random() * 0.7);
     px[j] = x; py[j] = y; pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s;
-    plife[j] = 0.35 + Math.random() * 0.3; pteam[j] = team;
+    plife[j] = 0.45 + Math.random() * 0.35; pteam[j] = team;
+    pz[j] = 4; pvz[j] = 50 + Math.random() * 110;
   }
 }
 
@@ -438,7 +440,7 @@ function kill(i) {
   act[p] = last; pos[last] = p;
   free[nFree++] = i;
   count[uteam[i]]--;
-  puff(ux[i], uy[i], uteam[i], utype[i] >= T.HEAVY ? 10 : 3, 100);
+  puff(ux[i], uy[i], uteam[i], utype[i] >= T.HEAVY ? 16 : 5, 70);
 }
 
 function cellOf(x, y) {
@@ -488,7 +490,7 @@ let state = 'menu';        // menu | play | paused | won | lost
 let attract = true;        // demo mode behind the menu
 let t = 0, frame = 0, endT = 0;
 let cannonX = 200, targetX = 200, firing = false, fireT = 0, charge = 0, shots = 0;
-let shake = 0;
+let shake = 0, recoil = 0, hurt = 0;
 const base = { hp: 0, max: 15 };
 let towers = [], gates = [], obstacles = [];
 let towersLeft = 0;
@@ -511,19 +513,19 @@ function loadLevel(idx, demo, cIdx) {
   CN = CANNONS[demo ? 0 : cIdx];
   resetPools();
   t = 0; frame = 0; endT = 0;
-  cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0; shake = 0;
+  cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0; shake = 0; recoil = 0; hurt = 0;
   base.hp = base.max;
   towers = L.towers.map(d => ({
     x: d.x, baseX: d.x, y: d.y, w: d.w, h: d.h, hp: d.hp, max: d.hp, hit: 0,
     every: d.every, burst: d.burst, mix: d.mix, brute: d.brute, boss: !!d.boss,
     amp: d.amp || 0, spd: d.spd || 0, shieldOn: !!d.shield, shield: 0, stage: 0,
-    spawnT: 1.5, bursts: 0,
+    spawnT: 1.5, bursts: 0, flash: 0, dmg: 0, dmgT: 0, fall: 0,
   }));
   towersLeft = towers.length;
   gates = L.gates.map((g, k) => ({
     x: g.x, baseX: g.x, y: g.y, w: g.w, op: g.op, n: g.n,
     amp: g.amp || 0, spd: g.spd || 0, phase: k * 1.7,
-    left: g.n, broken: 0, cd: 0, flash: 0, bit: 1 << k,
+    left: g.n, broken: 0, cd: 0, flash: 0, bit: 1 << k, pop: 0, popT: 0,
     label: g.op === 'x' ? '×' + g.n : g.op === '+' ? '+' + g.n : '−' + g.n,
   }));
   obstacles = (L.obs || []).map((o, k) => ({
@@ -541,7 +543,7 @@ function shoot(type) {
 }
 
 function fire() {
-  shots++; charge++;
+  shots++; charge++; recoil = 1;
   if (charge >= CN.charge) {
     charge = 0;
     const i = shoot(T.HEAVY);
@@ -561,6 +563,7 @@ function passGate(i, g) {
   g.flash = 0.12;
   if (g.op === '-') {
     g.left--;
+    g.pop--; g.popT = 0.9;
     if (g.left <= 0) { g.broken = 4; g.left = 0; }
     kill(i);
     return;
@@ -571,17 +574,21 @@ function passGate(i, g) {
   // Tanks and heavies don't copy themselves; gates turn them into stickmen.
   const type = utype[i] === T.TANK || utype[i] === T.HEAVY ? T.STICK : utype[i];
   const m = umask[i], x = ux[i], y = uy[i] - 2;
+  let made = 0;
   for (let k = 0; k < n; k++) {
     const j = spawn(0, type, x + (Math.random() - 0.5) * 14, y - Math.random() * 6, m);
     if (j < 0) break;
     uvx[j] = (Math.random() - 0.5) * 70;
+    made++;
   }
+  if (made) { g.pop += made; g.popT = 0.9; }
 }
 
 function hitTower(tw, d) {
   if (tw.hp <= 0) return;
   tw.hp = Math.max(0, tw.hp - d);
-  tw.hit = 0.1;
+  tw.hit = 0.1; tw.flash = 0.09;
+  tw.dmg += d; tw.dmgT = 0.8;
   if (tw.boss) {
     const f = tw.hp / tw.max;
     if ((tw.stage === 0 && f <= 0.66) || (tw.stage === 1 && f <= 0.33)) {
@@ -593,11 +600,17 @@ function hitTower(tw, d) {
   }
   if (tw.hp === 0) {
     towersLeft--;
+    tw.fall = 0.6; shake = 0.3;
+    for (let r = 0; r < 2; r++) {
+      const j = rNext; rNext = (rNext + 1) % MAXR;
+      rx[j] = tw.x; ry[j] = tw.y + tw.h / 2; rlife[j] = 0.3 + r * 0.15; rsz[j] = 2.5 + r * 1.5;
+    }
     for (let k = 0; k < 40; k++) {
       const j = pNext; pNext = (pNext + 1) % MAXP;
       const a = Math.random() * TAU, s = 60 + Math.random() * 160;
       px[j] = tw.x + (Math.random() - 0.5) * tw.w; py[j] = tw.y + (Math.random() - 0.5) * tw.h;
-      pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s; plife[j] = 0.8; pteam[j] = 1;
+      pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s; plife[j] = 1.1; pteam[j] = 1;
+      pz[j] = 20 + Math.random() * 60; pvz[j] = 80 + Math.random() * 160;
     }
     if (towersLeft === 0) endRound('won');
   }
@@ -606,14 +619,14 @@ function hitTower(tw, d) {
 function hitBase(d) {
   if (base.hp <= 0) return;
   base.hp = Math.max(0, base.hp - d);
-  shake = 0.18;
+  shake = 0.18; hurt = 0.4;
   if (base.hp === 0) endRound('lost');
 }
 
 function explode(i) {
   const x = ux[i], y = uy[i], team = uteam[i];
   const j = rNext; rNext = (rNext + 1) % MAXR;
-  rx[j] = x; ry[j] = y; rlife[j] = 0.3;
+  rx[j] = x; ry[j] = y; rlife[j] = 0.3; rsz[j] = 1;
   const h = head[team ^ 1];
   const c = cellOf(x, y), cx = c % COLS, cy = (c / COLS) | 0;
   for (let gy = Math.max(0, cy - 2); gy <= Math.min(ROWS - 1, cy + 2); gy++) {
@@ -736,6 +749,9 @@ function update(dt) {
   // Towers: drift, shields, enemy waves.
   for (let k = 0; k < towers.length; k++) {
     const tw = towers[k];
+    if (tw.flash > 0) tw.flash -= dt;
+    if (tw.dmgT > 0) { tw.dmgT -= dt; if (tw.dmgT <= 0) tw.dmg = 0; }
+    if (tw.fall > 0) tw.fall -= dt;
     if (tw.hp <= 0) continue;
     if (tw.amp) tw.x = Math.max(TL + tw.w / 2, Math.min(TR - tw.w / 2, tw.baseX + Math.sin(t * tw.spd) * tw.amp));
     if (tw.shield > 0) tw.shield -= dt;
@@ -760,6 +776,7 @@ function update(dt) {
     if (g.amp) g.x = Math.max(TL, Math.min(TR - g.w, g.baseX + Math.sin(t * g.spd + g.phase) * g.amp));
     if (g.cd > 0) g.cd -= dt;
     if (g.flash > 0) g.flash -= dt;
+    if (g.popT > 0) { g.popT -= dt; if (g.popT <= 0) g.pop = 0; }
     if (g.broken > 0) { g.broken -= dt; if (g.broken <= 0) { g.broken = 0; g.left = g.n; } }
   }
   for (let k = 0; k < obstacles.length; k++) {
@@ -917,11 +934,15 @@ function update(dt) {
     if (plife[j] <= 0) continue;
     plife[j] -= dt;
     px[j] += pvx[j] * dt; py[j] += pvy[j] * dt;
-    pvx[j] *= 0.92; pvy[j] *= 0.92;
+    pvx[j] *= 0.94; pvy[j] *= 0.94;
+    pvz[j] -= 320 * dt; pz[j] += pvz[j] * dt;
+    if (pz[j] < 0) { pz[j] = 0; pvz[j] *= -0.35; }
   }
   for (let j = 0; j < MAXR; j++) if (rlife[j] > 0) rlife[j] -= dt;
 
   if (shake > 0) shake -= dt;
+  if (recoil > 0) recoil = Math.max(0, recoil - dt * 9);
+  if (hurt > 0) hurt -= dt;
 
   if (state === 'won' || state === 'lost') {
     endT -= dt;
@@ -1143,13 +1164,21 @@ function drawProp(p) {
 function drawTower(tw) {
   const hitOff = tw.hit > 0 && !reduceMotion ? (Math.random() - 0.5) * 3 : 0;
   const x = tw.x + hitOff, x0 = x - tw.w / 2, x1 = x + tw.w / 2, yf = tw.y - tw.h / 2, yn = tw.y + tw.h / 2;
+  const Z = tw.h * 1.15;
+  const front = tw.boss ? C['theirs-deep'] : C.theirs;
   if (tw.hp <= 0) {
+    // Sink into the ground, then leave rubble.
+    if (tw.fall > 0) box(x0, yf, x1, yn, Z * tw.fall / 0.6, C['theirs-light'], front, C['theirs-deep']);
     box(x0 + 10, yn - 24, x1 - 10, yn, 10, C['rock-edge'], C.rock, C['lane-line']);
     return;
   }
-  const Z = tw.h * 1.15;
-  const front = tw.boss ? C['theirs-deep'] : C.theirs;
   box(x0, yf, x1, yn, Z, C['theirs-light'], front, C['theirs-deep']);
+  if (tw.flash > 0) {
+    ctx.globalAlpha = tw.flash / 0.09 * 0.55;
+    ctx.fillStyle = C.paper;
+    ctx.beginPath(); moveTo3(x0, yn, 0); lineTo3(x1, yn, 0); lineTo3(x1, yn, Z); lineTo3(x0, yn, Z); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
   // Battlements along the front edge.
   proj(x0, yn, Z);
   const fx = PX, fy = PY, s = PS, fw = tw.w * s;
@@ -1173,7 +1202,7 @@ function drawTower(tw) {
   proj(x, yn, Z * 0.62);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = C.paper;
-  ctx.font = Math.round((tw.w < 110 ? 26 : 32) * PS) + 'px ' + FONT;
+  ctx.font = Math.round((tw.w < 110 ? 26 : 32) * PS * (1 + Math.max(0, tw.flash) * 3)) + 'px ' + FONT;
   ctx.fillText(String(Math.ceil(tw.hp)), PX, PY);
   proj(x, yf, Z);
   const by = PY - (tw.boss ? 40 : 24) * PS, bw = tw.w * PS * 0.9;
@@ -1234,7 +1263,7 @@ function drawGate(g) {
   const lx = PX, ly = PY, s = PS;
   proj(g.x + g.w, g.y, 0);
   const rxp = PX;
-  const top = ly - 48 * s, bot = ly - 26 * s;
+  const top = ly - (48 + (g.flash > 0 ? 4 : 0)) * s, bot = ly - 26 * s;
   ctx.strokeStyle = C.outline; ctx.lineWidth = 6 * s; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx, top); ctx.moveTo(rxp, ly); ctx.lineTo(rxp, top); ctx.stroke();
   ctx.strokeStyle = col; ctx.lineWidth = 3.5 * s;
@@ -1263,6 +1292,12 @@ function drawCannon() {
   ctx.beginPath(); ctx.arc(0, -4, 24, 0, TAU); ctx.stroke();
   ctx.strokeStyle = charge >= CN.charge - 1 ? C.paper : C.ours;
   ctx.beginPath(); ctx.arc(0, -4, 24, -Math.PI / 2, -Math.PI / 2 + TAU * charge / CN.charge); ctx.stroke();
+  ctx.save();
+  ctx.translate(0, recoil * 7);
+  if (recoil > 0.55) {
+    ctx.globalAlpha = recoil; ctx.fillStyle = C['ours-light'];
+    ctx.beginPath(); ctx.arc(0, p === 'lob' ? -36 : -42, 9 * recoil, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+  }
   ctx.fillStyle = C['ours-deep'];
   ctx.beginPath();
   if (p === 'spread') {
@@ -1280,6 +1315,7 @@ function drawCannon() {
     ctx.strokeStyle = C.wood; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(0, -18, 20, -Math.PI + 0.5, -0.5); ctx.stroke();
   }
+  ctx.restore();
   ctx.fillStyle = C.ours;
   ctx.beginPath(); ctx.arc(0, -4, 17, 0, TAU); ctx.fill();
   ctx.globalAlpha = 0.4; ctx.fillStyle = C.paper;
@@ -1289,6 +1325,35 @@ function drawCannon() {
   ctx.font = '13px ' + FONT;
   ctx.fillText(String(CN.charge - charge), 0, -3);
   ctx.restore();
+}
+
+// Floating counters: running gate totals and tower damage, drawn above everything.
+function popText(text, x, y, z, fill, size, alpha) {
+  proj(x, y, z);
+  ctx.globalAlpha = alpha;
+  ctx.font = Math.round(size * PS) + 'px ' + FONT;
+  ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.strokeStyle = C.outline;
+  ctx.strokeText(text, PX, PY);
+  ctx.fillStyle = fill;
+  ctx.fillText(text, PX, PY);
+  ctx.globalAlpha = 1;
+}
+
+function drawPops() {
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let k = 0; k < gates.length; k++) {
+    const g = gates[k];
+    if (g.popT <= 0 || g.pop === 0) continue;
+    const pulse = g.popT > 0.78 ? (g.popT - 0.78) * 3 : 0;
+    popText((g.pop > 0 ? '+' : '−') + Math.abs(g.pop), g.x + g.w / 2, g.y, 62 + (0.9 - g.popT) * 26,
+      g.pop > 0 ? C.ours : C.bad, 24 * (1 + pulse), Math.min(1, g.popT * 4));
+  }
+  for (let k = 0; k < towers.length; k++) {
+    const tw = towers[k];
+    if (tw.dmgT <= 0 || tw.dmg <= 0) continue;
+    popText('−' + Math.ceil(tw.dmg), tw.x + tw.w * 0.3, tw.y - tw.h / 2, tw.h * 1.15 + 52 + (0.8 - tw.dmgT) * 30,
+      C.paper, 28, Math.min(1, tw.dmgT * 4));
+  }
 }
 
 let skyGrad = null;
@@ -1335,7 +1400,7 @@ function draw() {
   ctx.beginPath();
   for (let j = 0; j < MAXR; j++) {
     if (rlife[j] <= 0) continue;
-    const rad = BOMB_RADIUS * (1.15 - rlife[j] / 0.3 * 0.6);
+    const rad = BOMB_RADIUS * rsz[j] * (1.15 - rlife[j] / 0.3 * 0.6);
     proj(rx[j], ry[j], 0);
     ctx.moveTo(PX + rad * PS, PY); ctx.ellipse(PX, PY, rad * PS, rad * PS * 0.5, 0, 0, TAU);
   }
@@ -1351,6 +1416,7 @@ function draw() {
     for (let k = binStart[b]; k < binStart[b + 1]; k++) drawUnit(binIdx[k]);
   }
   while (pi < props.length) drawProp(props[pi++]);
+  drawPops();
 
   // Arrows.
   ctx.lineWidth = 1.6; ctx.lineCap = 'round';
@@ -1370,7 +1436,7 @@ function draw() {
     ctx.beginPath();
     for (let j = 0; j < MAXP; j++) {
       if (plife[j] <= 0 || pteam[j] !== team) continue;
-      proj(px[j], py[j], 8);
+      proj(px[j], py[j], pz[j]);
       const s = (1 + plife[j] * 5) * PS;
       ctx.rect(PX - s / 2, PY - s / 2, s, s);
     }
@@ -1397,6 +1463,15 @@ function draw() {
     ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.3;
     ctx.fillStyle = C.paper; ctx.font = '22px ' + FONT;
     ctx.fillText('Drag to aim · hold to fire', W / 2, CANNON_Y - 110);
+    ctx.globalAlpha = 1;
+  }
+
+  // Red edge flash when the base is hit.
+  if (hurt > 0) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = Math.min(0.55, hurt * 1.4);
+    ctx.strokeStyle = C.bad; ctx.lineWidth = 26 * dpr;
+    ctx.strokeRect(0, 0, cv.width, cv.height);
     ctx.globalAlpha = 1;
   }
 }
