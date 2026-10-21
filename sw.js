@@ -1,6 +1,6 @@
 // Cache-first service worker so Stickstorm plays offline after the first visit.
 // Bump CACHE when you change index.html so phones pick up the new version.
-const CACHE = 'stickstorm-v4';
+const CACHE = 'stickstorm-v5';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

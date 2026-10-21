@@ -152,22 +152,80 @@ h2 {
 .lvl.done b { color: var(--good); }
 .cannons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; }
 .cannon {
-  display: flex; flex-direction: column; gap: 3px;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
   min-width: 0;
   padding: 10px 12px;
   border-radius: 12px;
   border: 2px solid var(--lane-line);
   background: var(--lane);
   color: var(--paper);
-  cursor: pointer;
   font-family: var(--font-body);
   text-align: left;
 }
+.cannon.locked { opacity: 0.4; }
+.pick {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 0; border: 0; background: none; color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+}
+.pick:disabled { cursor: default; }
 .cannon b { font: 20px/1 var(--font-display); color: var(--ours); }
 .cannon span { font-size: 12px; line-height: 1.3; color: var(--muted); }
 .cannon i { font-style: normal; font-size: 11px; font-weight: 800; color: var(--paper); font-variant-numeric: tabular-nums; }
 .cannon.on { border-color: var(--ours); box-shadow: inset 0 0 0 1px var(--ours); }
-.cannon:disabled { opacity: 0.35; cursor: default; }
+.mini {
+  display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+  padding: 9px 10px;
+  border: 0; border-radius: 10px;
+  background: var(--ours); color: var(--ink);
+  font: 15px/1 var(--font-display);
+  box-shadow: 0 3px 0 var(--ours-deep);
+  cursor: pointer;
+}
+.mini:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ours-deep); }
+.mini:disabled { background: var(--lane-line); color: var(--muted); box-shadow: none; cursor: default; transform: none; }
+.wallet {
+  align-self: center;
+  display: inline-flex; align-items: center;
+  margin: 0; padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--lane-line);
+  background: var(--lane);
+  font: 18px/1 var(--font-display);
+  color: var(--ours);
+  font-variant-numeric: tabular-nums;
+}
+.wallet::before, .c::before {
+  content: "";
+  display: inline-block;
+  width: 0.85em; height: 0.85em;
+  margin-right: 0.3em;
+  border-radius: 50%;
+  background: var(--ours);
+  box-shadow: inset 0 0 0 2px var(--ours-deep);
+}
+.cannon .mini span { font-size: inherit; line-height: inherit; color: inherit; }
+.mini .c::before { background: var(--ours-light); box-shadow: inset 0 0 0 2px var(--ink); }
+.mini:disabled .c::before { background: var(--muted); box-shadow: inset 0 0 0 2px var(--lane); }
+.ups { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.up {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid var(--lane-line);
+  background: var(--lane);
+}
+.up-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.up-info b { font: 20px/1 var(--font-display); color: var(--paper); }
+.up-info span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pips { display: flex; gap: 4px; }
+.pips i { width: 18px; height: 6px; border-radius: 3px; background: var(--lane-line); }
+.pips i.on { background: var(--ours); }
+.up .mini { min-width: 78px; }
+.stars { margin: 0; font-size: 36px; line-height: 1; letter-spacing: 6px; color: var(--lane-line); }
+.stars .on { color: var(--ours); }
+.res-coins { margin: 0; font-size: 15px; font-weight: 800; color: var(--ours); }
+.lvl em { font-style: normal; font-size: 10px; line-height: 1; letter-spacing: 1px; color: var(--ours); }
 .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .btn {
   flex: 1 1 140px;
@@ -190,24 +248,36 @@ button:focus-visible { outline: 3px solid var(--good); outline-offset: 3px; }
 
 <div id="overlay">
   <div class="panel" id="menu">
+    <p class="wallet"><span class="coins">0</span></p>
     <h1>Stickstorm</h1>
     <p class="tag">Fire your crowd through the gates and knock down every tower before their army reaches you.</p>
     <div class="levels" id="levels"></div>
-    <p class="how">Drag to slide the cannon. Hold to keep firing. Beat levels to unlock new cannons.</p>
+    <p class="how">Drag to slide the cannon. Hold to keep firing. Win levels and earn stars for coins, then buy and upgrade cannons.</p>
   </div>
   <div class="panel" id="pick" hidden>
     <p class="eyebrow" id="pickEyebrow"></p>
     <h2>Choose a cannon</h2>
+    <p class="wallet"><span class="coins">0</span></p>
     <div class="cannons" id="cannons"></div>
     <div class="row">
       <button class="btn" id="pickStart">Start</button>
       <button class="btn ghost" id="pickBack">Levels</button>
     </div>
   </div>
+  <div class="panel" id="upgrade" hidden>
+    <p class="eyebrow" id="upEyebrow"></p>
+    <h2>Upgrades</h2>
+    <p class="wallet"><span class="coins">0</span></p>
+    <div class="ups" id="ups"></div>
+    <div class="row"><button class="btn" id="upBack">Done</button></div>
+  </div>
   <div class="panel" id="result" hidden>
     <p class="eyebrow" id="resEyebrow"></p>
     <h2 id="resTitle"></h2>
+    <p class="stars" id="resStars"></p>
     <p class="res-text" id="resText"></p>
+    <p class="res-coins" id="resCoins"></p>
+    <p class="wallet"><span class="coins">0</span></p>
     <div class="row">
       <button class="btn" id="resPrimary"></button>
       <button class="btn ghost" id="resCannon">Cannon</button>
@@ -412,7 +482,8 @@ function spawn(team, type, x, y, mask) {
   const i = free[--nFree], u = UNIT[type];
   ux[i] = x; uy[i] = y; uvx[i] = 0; uvy[i] = 0;
   uteam[i] = team; utype[i] = type; umask[i] = mask;
-  uhp[i] = u.hp; ur[i] = u.r;
+  uhp[i] = team ? u.hp : u.hp * hpMul + (type === T.HEAVY ? heavyBonus : 0);
+  ur[i] = u.r;
   uspd[i] = u.spd * (team ? ENEMY_PACE : 1) * (0.92 + Math.random() * 0.16);
   uph[i] = Math.random() * TAU;
   ucd[i] = 0; uair[i] = 0;
@@ -497,20 +568,63 @@ let towersLeft = 0;
 let keyL = false, keyR = false, keySpace = false;
 let newCannon = -1;
 
-let unlocked = 0;
-try { unlocked = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem('stickstorm.unlocked') || '0', 10) || 0); } catch (e) {}
-try { cannonIdx = Math.min(CANNONS.length - 1, parseInt(localStorage.getItem('stickstorm.cannon') || '0', 10) || 0); } catch (e) {}
-if (CANNONS[cannonIdx].unlock > unlocked) cannonIdx = 0;
-function save() {
-  try {
-    localStorage.setItem('stickstorm.unlocked', String(unlocked));
-    localStorage.setItem('stickstorm.cannon', String(cannonIdx));
-  } catch (e) {}
+// ---- Coins, stars and upgrades ----
+const CANNON_PRICE = [0, 120, 200, 300, 400, 500];
+const UP_NAMES = ['Fire rate', 'Toughness', 'Charge'];
+const UP_COST = [40, 65, 100, 165, 260], UP_MAX = 5;
+const isBossLevel = i => LEVELS[i].towers.some(d => d.boss);
+function clearReward(i) { return (20 + 10 * (i + 1)) * (isBossLevel(i) ? 2 : 1); }
+function starReward(i) { return 15 + 5 * (i + 1); }
+function chargeFor(c, n) { return Math.max(5, Math.round(c.charge * (1 - 0.12 * n))); }
+let hpMul = 1, heavyBonus = 0;
+let earned = { clear: 0, stars: 0, count: 0 };
+
+function freshSave() {
+  return { v: 1, coins: 0, unlocked: 0, cannon: 0,
+    owned: CANNONS.map((c, i) => i === 0), up: CANNONS.map(() => [0, 0, 0]), stars: LEVELS.map(() => 0) };
 }
+function loadSave() {
+  const sv = freshSave();
+  try {
+    const raw = localStorage.getItem('stickstorm.save');
+    if (raw) {
+      const d = JSON.parse(raw);
+      sv.coins = Math.max(0, d.coins | 0);
+      sv.unlocked = Math.max(0, Math.min(LEVELS.length - 1, d.unlocked | 0));
+      sv.cannon = Math.max(0, Math.min(CANNONS.length - 1, d.cannon | 0));
+      CANNONS.forEach((c, i) => {
+        sv.owned[i] = i === 0 || !!(d.owned && d.owned[i]);
+        for (let k = 0; k < 3; k++) sv.up[i][k] = Math.max(0, Math.min(UP_MAX, (d.up && d.up[i] && d.up[i][k]) | 0));
+      });
+      LEVELS.forEach((l, i) => { sv.stars[i] = Math.max(0, Math.min(3, (d.stars && d.stars[i]) | 0)); });
+    } else {
+      // Older saves only kept the unlocked level: keep its cannons and pay a one-time welcome bonus.
+      const old = Math.min(LEVELS.length, parseInt(localStorage.getItem('stickstorm.unlocked') || '0', 10) || 0);
+      if (old > 0) {
+        sv.unlocked = Math.min(LEVELS.length - 1, old);
+        for (let i = 0; i < old; i++) { sv.stars[i] = 1; sv.coins += clearReward(i) + starReward(i); }
+        CANNONS.forEach((c, i) => { if (c.unlock <= old) sv.owned[i] = true; });
+        sv.cannon = Math.min(CANNONS.length - 1, parseInt(localStorage.getItem('stickstorm.cannon') || '0', 10) || 0);
+      }
+    }
+  } catch (e) {}
+  if (!sv.owned[sv.cannon]) sv.cannon = 0;
+  return sv;
+}
+const SAVE = loadSave();
+let unlocked = SAVE.unlocked;
+cannonIdx = SAVE.cannon;
+function save() {
+  SAVE.unlocked = unlocked; SAVE.cannon = cannonIdx;
+  try { localStorage.setItem('stickstorm.save', JSON.stringify(SAVE)); } catch (e) {}
+}
+save();
 
 function loadLevel(idx, demo, cIdx) {
   levelIdx = idx; L = LEVELS[idx]; attract = demo;
-  CN = CANNONS[demo ? 0 : cIdx];
+  const bc = CANNONS[demo ? 0 : cIdx], up = demo ? [0, 0, 0] : SAVE.up[cIdx];
+  CN = Object.assign({}, bc, { rate: bc.rate * (1 + 0.1 * up[0]), charge: chargeFor(bc, up[2]) });
+  hpMul = 1 + 0.25 * up[1]; heavyBonus = 2 * up[2];
   resetPools();
   t = 0; frame = 0; endT = 0;
   cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0; shake = 0; recoil = 0; hurt = 0;
@@ -651,6 +765,15 @@ function endRound(result) {
   if (state !== 'play') return;
   state = result; endT = 1.0; firing = false;
   newCannon = -1;
+  earned.clear = 0; earned.stars = 0; earned.count = 0;
+  if (result === 'won') {
+    const f = base.hp / base.max, stars = f >= 0.9 ? 3 : f >= 0.5 ? 2 : 1, prev = SAVE.stars[levelIdx];
+    earned.count = stars;
+    if (prev === 0) earned.clear = clearReward(levelIdx);
+    if (stars > prev) { earned.stars = (stars - prev) * starReward(levelIdx); SAVE.stars[levelIdx] = stars; }
+    SAVE.coins += earned.clear + earned.stars;
+    save();
+  }
   if (result === 'won' && levelIdx + 1 > unlocked) {
     const before = unlocked;
     unlocked = Math.min(LEVELS.length - 1, levelIdx + 1);
@@ -1517,11 +1640,12 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && sta
 
 // ---- Menus ----
 const overlay = document.getElementById('overlay');
-const panels = ['menu', 'pick', 'result', 'paused'].map(id => document.getElementById(id));
-const [menuEl, pickEl, resultEl, pausedEl] = panels;
+const panels = ['menu', 'pick', 'upgrade', 'result', 'paused'].map(id => document.getElementById(id));
+const [menuEl, pickEl, upEl, resultEl, pausedEl] = panels;
 const pauseBtn = document.getElementById('pauseBtn');
 const levelsEl = document.getElementById('levels');
 const cannonsEl = document.getElementById('cannons');
+const upsEl = document.getElementById('ups');
 let pickLevel = 0;
 
 function showPanel(el) {
@@ -1541,35 +1665,115 @@ function renderLevels() {
     }
     const isBoss = lv.towers.some(d => d.boss);
     const b = document.createElement('button');
-    b.className = 'lvl' + (i < unlocked ? ' done' : '') + (isBoss ? ' boss' : '');
+    const st = SAVE.stars[i];
+    b.className = 'lvl' + (st > 0 ? ' done' : '') + (isBoss ? ' boss' : '');
     b.disabled = i > unlocked;
-    b.setAttribute('aria-label', 'Level ' + (i + 1) + ', ' + lv.name);
-    b.innerHTML = '<b>' + (i + 1) + '</b><span></span>';
+    b.setAttribute('aria-label', 'Level ' + (i + 1) + ', ' + lv.name + (st ? ', ' + st + ' of 3 stars' : ''));
+    b.innerHTML = '<b>' + (i + 1) + '</b><em></em><span></span>';
+    b.querySelector('em').textContent = st ? '★'.repeat(st) + '☆'.repeat(3 - st) : '\u00a0';
     b.querySelector('span').textContent = isBoss ? 'Boss' : lv.towers.length > 1 ? lv.towers.length + ' towers' : ' ';
     b.addEventListener('click', () => showPick(i));
     levelsEl.appendChild(b);
   });
 }
 
+const fmt = v => (Math.round(v * 10) / 10).toString();
+function updateCoins() { document.querySelectorAll('.coins').forEach(e => { e.textContent = SAVE.coins; }); }
+
 function renderCannons() {
   cannonsEl.textContent = '';
   CANNONS.forEach((c, i) => {
-    const b = document.createElement('button');
-    const locked = c.unlock > unlocked;
-    b.className = 'cannon' + (i === cannonIdx ? ' on' : '');
-    b.disabled = locked;
-    b.setAttribute('aria-pressed', String(i === cannonIdx));
-    b.innerHTML = '<b></b><span></span><i></i>';
-    b.querySelector('b').textContent = c.name;
-    b.querySelector('span').textContent = locked ? 'Beat level ' + c.unlock + ' to unlock' : c.desc;
-    b.querySelector('i').textContent = locked ? '' : (c.pattern === 'spread' ? c.rate + ' volleys/s' : c.rate + ' shots/s');
-    b.addEventListener('click', () => { cannonIdx = i; save(); renderCannons(); });
-    cannonsEl.appendChild(b);
+    const owned = SAVE.owned[i], reached = c.unlock <= unlocked, up = SAVE.up[i];
+    const card = document.createElement('div');
+    card.className = 'cannon' + (owned && i === cannonIdx ? ' on' : '') + (reached ? '' : ' locked');
+    const pick = document.createElement('button');
+    pick.className = 'pick';
+    pick.disabled = !owned;
+    pick.setAttribute('aria-pressed', String(owned && i === cannonIdx));
+    pick.innerHTML = '<b></b><span></span><i></i>';
+    pick.querySelector('b').textContent = c.name;
+    pick.querySelector('span').textContent = reached ? c.desc : 'Beat level ' + c.unlock + ' to unlock';
+    pick.querySelector('i').textContent = owned
+      ? fmt(c.rate * (1 + 0.1 * up[0])) + (c.pattern === 'spread' ? ' volleys/s' : ' shots/s') + ' · Lv ' + (up[0] + up[1] + up[2]) + '/15'
+      : '';
+    pick.addEventListener('click', () => { cannonIdx = i; save(); renderCannons(); });
+    card.appendChild(pick);
+    if (reached) {
+      const act = document.createElement('button');
+      act.className = 'mini';
+      if (owned) {
+        act.textContent = 'Upgrade';
+        act.addEventListener('click', () => showUpgrades(i));
+      } else {
+        act.innerHTML = 'Buy&nbsp;<span class="c"></span>';
+        act.querySelector('.c').textContent = CANNON_PRICE[i];
+        act.disabled = SAVE.coins < CANNON_PRICE[i];
+        act.setAttribute('aria-label', 'Buy ' + c.name + ' for ' + CANNON_PRICE[i] + ' coins');
+        act.addEventListener('click', () => buyCannon(i));
+      }
+      card.appendChild(act);
+    }
+    cannonsEl.appendChild(card);
   });
+  updateCoins();
 }
+
+function buyCannon(i) {
+  const price = CANNON_PRICE[i];
+  if (SAVE.owned[i] || CANNONS[i].unlock > unlocked || SAVE.coins < price) return false;
+  SAVE.coins -= price; SAVE.owned[i] = true; cannonIdx = i;
+  save(); renderCannons();
+  return true;
+}
+
+function buyUpgrade(c, k) {
+  const n = SAVE.up[c][k];
+  if (!SAVE.owned[c] || n >= UP_MAX || SAVE.coins < UP_COST[n]) return false;
+  SAVE.coins -= UP_COST[n]; SAVE.up[c][k]++;
+  save(); renderUpgrades();
+  return true;
+}
+
+let upCannon = 0;
+function upEffect(c, k, n) {
+  const cn = CANNONS[c];
+  if (k === 0) return fmt(cn.rate * (1 + 0.1 * n)) + '/s';
+  if (k === 1) return '+' + 25 * n + '% HP';
+  return 'heavy every ' + chargeFor(cn, n) + (n ? ', +' + 2 * n + ' HP' : '');
+}
+function renderUpgrades() {
+  const c = upCannon;
+  document.getElementById('upEyebrow').textContent = CANNONS[c].name;
+  upsEl.textContent = '';
+  UP_NAMES.forEach((name, k) => {
+    const n = SAVE.up[c][k];
+    const row = document.createElement('div');
+    row.className = 'up';
+    row.innerHTML = '<div class="up-info"><b></b><span></span><div class="pips"></div></div>';
+    row.querySelector('b').textContent = name;
+    row.querySelector('span').textContent = n < UP_MAX ? upEffect(c, k, n) + ' → ' + upEffect(c, k, n + 1) : upEffect(c, k, n);
+    const pips = row.querySelector('.pips');
+    for (let j = 0; j < UP_MAX; j++) { const p = document.createElement('i'); if (j < n) p.className = 'on'; pips.appendChild(p); }
+    const b = document.createElement('button');
+    b.className = 'mini';
+    if (n >= UP_MAX) { b.textContent = 'Max'; b.disabled = true; }
+    else {
+      b.innerHTML = '<span class="c"></span>';
+      b.querySelector('.c').textContent = UP_COST[n];
+      b.disabled = SAVE.coins < UP_COST[n];
+      b.setAttribute('aria-label', 'Upgrade ' + name + ' for ' + UP_COST[n] + ' coins');
+      b.addEventListener('click', () => buyUpgrade(c, k));
+    }
+    row.appendChild(b);
+    upsEl.appendChild(row);
+  });
+  updateCoins();
+}
+function showUpgrades(c) { upCannon = c; renderUpgrades(); showPanel(upEl); }
 
 function showMenu() {
   renderLevels();
+  updateCoins();
   loadLevel(unlocked, true, 0);
   state = 'menu';
   showPanel(menuEl);
@@ -1601,8 +1805,25 @@ function showResult() {
   let text = won
     ? shots + ' shots fired, base at ' + base.hp + ' of ' + base.max + '.'
     : 'Towers still had ' + towers.reduce((s, tw) => s + Math.ceil(tw.hp), 0) + ' HP left.';
-  if (won && newCannon >= 0) text += ' New cannon unlocked: ' + CANNONS[newCannon].name + '.';
+  if (won && newCannon >= 0) text += ' ' + CANNONS[newCannon].name + ' is now in the shop.';
   document.getElementById('resText').textContent = text;
+  const starsEl = document.getElementById('resStars');
+  starsEl.hidden = !won;
+  starsEl.textContent = '';
+  starsEl.setAttribute('aria-label', earned.count + ' of 3 stars');
+  for (let k = 0; k < 3; k++) {
+    const sp = document.createElement('span');
+    sp.textContent = '★';
+    if (k < earned.count) sp.className = 'on';
+    starsEl.appendChild(sp);
+  }
+  const parts = [];
+  if (earned.clear) parts.push('First clear +' + earned.clear);
+  if (earned.stars) parts.push('New stars +' + earned.stars);
+  document.getElementById('resCoins').textContent = won
+    ? (parts.length ? parts.join(' · ') : 'No new coins. Win with more base health for more stars.')
+    : 'No coins this time. Upgrading your cannon can help.';
+  updateCoins();
   const primary = document.getElementById('resPrimary');
   primary.textContent = won ? (lastLevel ? 'Play again' : 'Next level') : 'Retry';
   const nextIdx = won ? (lastLevel ? 0 : levelIdx + 1) : levelIdx;
@@ -1615,6 +1836,7 @@ function showResult() {
 pauseBtn.addEventListener('click', pause);
 document.getElementById('pickStart').addEventListener('click', () => startLevel(pickLevel));
 document.getElementById('pickBack').addEventListener('click', showMenu);
+document.getElementById('upBack').addEventListener('click', () => showPick(pickLevel));
 document.getElementById('resMenu').addEventListener('click', showMenu);
 document.getElementById('pResume').addEventListener('click', () => { state = 'play'; showPanel(null); });
 document.getElementById('pRestart').addEventListener('click', () => startLevel(levelIdx));
@@ -1631,7 +1853,9 @@ try {
 window.__stickstorm = {
   get state() { return state; }, get crowd() { return count[0]; }, get enemies() { return count[1]; },
   get tower() { return towers.reduce((s, tw) => s + tw.hp, 0); }, get base() { return base.hp; },
-  startLevel, LEVELS, CANNONS, draw,
+  startLevel, LEVELS, CANNONS, draw, SAVE, buyCannon, buyUpgrade,
+  get coins() { return SAVE.coins; }, set coins(v) { SAVE.coins = v; save(); }, setBase(v) { base.hp = v; },
+  get earned() { return earned; },
   step(n, aimX) { for (let k = 0; k < n; k++) { if (aimX !== undefined) targetX = aimX(t); if (state === 'play') firing = true; update(1 / 60); } },
 };
 
