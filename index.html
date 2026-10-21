@@ -304,7 +304,7 @@ const TL = 22, TR = 378;                 // track edges
 const CANNON_Y = H - 96, BASE_Y = H - 64;
 const CELL = 20, COLS = Math.ceil(W / CELL), ROWS = Math.ceil(H / CELL) + 2;
 const MAX = 1800, MAXP = 900, MAXQ = 400, MAXR = 24, TAU = Math.PI * 2;
-const ENEMY_PACE = 0.45;                 // enemies walk at this fraction of our speed
+const ENEMY_PACE = 0.52;                 // enemies walk at this fraction of our speed
 
 const rootStyle = getComputedStyle(document.documentElement);
 const C = {};
@@ -436,6 +436,10 @@ const LEVELS = [
     gates: [{ x: 30, y: 590, w: 110, op: 'x', n: 2 }, { x: 260, y: 590, w: 110, op: 'x', n: 2 },
             { x: 150, y: 410, w: 100, op: 'x', n: 3, amp: 120, spd: 1.2 }, { x: 40, y: 260, w: 100, op: '+', n: 12 }, { x: 260, y: 260, w: 100, op: '-', n: 30 }] },
 ];
+// Heat: per-level pressure. Waves get √heat× bigger, enemies √heat× tougher, towers (1 + (heat - 1) / 2)× more HP.
+// Tuned to 65% (level 1) rising to 90% (level 20) of what a perfect-aim bot with affordable upgrades survives.
+const HEAT = [3.2, 3.1, 2.1, 3.7, 2.0, 9.0, 5.2, 7.3, 4.8, 3.3, 4.7, 4.5, 4.3, 4.7, 3.3, 7.5, 4.0, 9.0, 5.4, 8.0];
+LEVELS.forEach((l, i) => { l.heat = HEAT[i]; });
 
 // ---- Unit pool (structure of arrays, no per-frame allocation) ----
 const ux = new Float32Array(MAX), uy = new Float32Array(MAX);
@@ -482,7 +486,7 @@ function spawn(team, type, x, y, mask) {
   const i = free[--nFree], u = UNIT[type];
   ux[i] = x; uy[i] = y; uvx[i] = 0; uvy[i] = 0;
   uteam[i] = team; utype[i] = type; umask[i] = mask;
-  uhp[i] = team ? u.hp : u.hp * hpMul + (type === T.HEAVY ? heavyBonus : 0);
+  uhp[i] = team ? u.hp * foeMul : u.hp * hpMul + (type === T.HEAVY ? heavyBonus : 0);
   ur[i] = u.r;
   uspd[i] = u.spd * (team ? ENEMY_PACE : 1) * (0.92 + Math.random() * 0.16);
   uph[i] = Math.random() * TAU;
@@ -576,7 +580,7 @@ const isBossLevel = i => LEVELS[i].towers.some(d => d.boss);
 function clearReward(i) { return (20 + 10 * (i + 1)) * (isBossLevel(i) ? 2 : 1); }
 function starReward(i) { return 15 + 5 * (i + 1); }
 function chargeFor(c, n) { return Math.max(5, Math.round(c.charge * (1 - 0.12 * n))); }
-let hpMul = 1, heavyBonus = 0;
+let hpMul = 1, heavyBonus = 0, foeMul = 1;
 let earned = { clear: 0, stars: 0, count: 0 };
 
 function freshSave() {
@@ -629,9 +633,11 @@ function loadLevel(idx, demo, cIdx) {
   t = 0; frame = 0; endT = 0;
   cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0; shake = 0; recoil = 0; hurt = 0;
   base.hp = base.max;
+  const hpOf = d => Math.round(d.hp * (1 + (L.heat - 1) / 2));
+  foeMul = Math.sqrt(L.heat);
   towers = L.towers.map(d => ({
-    x: d.x, baseX: d.x, y: d.y, w: d.w, h: d.h, hp: d.hp, max: d.hp, hit: 0,
-    every: d.every, burst: d.burst, mix: d.mix, brute: d.brute, boss: !!d.boss,
+    x: d.x, baseX: d.x, y: d.y, w: d.w, h: d.h, hp: hpOf(d), max: hpOf(d), hit: 0,
+    every: d.every, burst: d.burst * Math.sqrt(L.heat), mix: d.mix, brute: d.brute, boss: !!d.boss,
     amp: d.amp || 0, spd: d.spd || 0, shieldOn: !!d.shield, shield: 0, stage: 0,
     spawnT: 1.5, bursts: 0, flash: 0, dmg: 0, dmgT: 0, fall: 0,
   }));
