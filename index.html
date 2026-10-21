@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Stickstorm</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#16213a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stickstorm">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap">
+<style>
+/* Layout: one portrait playfield letterboxed into the safe area; menus float over it as a toy-like card. */
+:root {
+  --ink: #16213a;
+  --lane: #22325a;
+  --lane-line: #2e4274;
+  --ours: #ffcf33;
+  --ours-deep: #c9930a;
+  --theirs: #ff4f7b;
+  --good: #2fd6a0;
+  --bad: #ff7a45;
+  --paper: #f3f6ff;
+  --muted: #9fb0d6;
+  --scrim: rgba(16, 24, 44, 0.78);
+  --font-display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  --font-body: "Nunito", ui-rounded, system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#stage {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  bottom: env(safe-area-inset-bottom, 0px);
+  left: env(safe-area-inset-left, 0px);
+  right: env(safe-area-inset-right, 0px);
+}
+#cv { display: block; width: 100%; height: 100%; touch-action: none; }
+#pauseBtn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: calc(env(safe-area-inset-right, 0px) + 10px);
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--lane-line);
+  background: var(--lane);
+  color: var(--paper);
+  font: 18px/1 var(--font-display);
+  letter-spacing: 2px;
+  cursor: pointer;
+}
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  padding-block: calc(env(safe-area-inset-top, 0px) + 16px) calc(env(safe-area-inset-bottom, 0px) + 16px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overflow-y: auto;
+}
+.panel {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+h1 {
+  margin: 0;
+  font: 64px/0.95 var(--font-display);
+  color: var(--ours);
+  text-shadow: 4px 4px 0 var(--theirs);
+  letter-spacing: 1px;
+  text-wrap: balance;
+}
+h2 {
+  margin: 0;
+  font: 44px/1 var(--font-display);
+  color: var(--ours);
+  text-wrap: balance;
+}
+.tag, .how, .res-text { margin: 0; font-size: 16px; line-height: 1.45; color: var(--muted); }
+.how { font-size: 14px; }
+.eyebrow {
+  margin: 0;
+  font: 800 12px/1 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--good);
+}
+.levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
+.lvl {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 4px 10px;
+  border-radius: 14px;
+  border: 2px solid var(--lane-line);
+  background: var(--lane);
+  color: var(--paper);
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.lvl b { font: 30px/1 var(--font-display); color: var(--ours); }
+.lvl span { font-size: 11px; font-weight: 800; color: var(--muted); }
+.lvl:disabled { opacity: 0.38; cursor: default; }
+.lvl.done b { color: var(--good); }
+.row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  flex: 1 1 140px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ours);
+  color: var(--ink);
+  font: 22px/1 var(--font-display);
+  box-shadow: 0 5px 0 var(--ours-deep);
+  cursor: pointer;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ours-deep); }
+.btn.ghost { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 2px var(--lane-line); }
+button:focus-visible { outline: 3px solid var(--good); outline-offset: 3px; }
+</style>
+
+<div id="stage"><canvas id="cv"></canvas></div>
+<button id="pauseBtn" aria-label="Pause" hidden>II</button>
+
+<div id="overlay">
+  <div class="panel" id="menu">
+    <h1>Stickstorm</h1>
+    <p class="tag">Fire your crowd through the gates and knock down the tower before its army reaches you.</p>
+    <div class="levels" id="levels"></div>
+    <p class="how">Drag to slide the cannon. Hold to keep firing. Every 30 shots launches a heavy.</p>
+  </div>
+  <div class="panel" id="result" hidden>
+    <p class="eyebrow" id="resEyebrow"></p>
+    <h2 id="resTitle"></h2>
+    <p class="res-text" id="resText"></p>
+    <div class="row">
+      <button class="btn" id="resPrimary"></button>
+      <button class="btn ghost" id="resMenu">Levels</button>
+    </div>
+  </div>
+  <div class="panel" id="paused" hidden>
+    <h2>Paused</h2>
+    <div class="row">
+      <button class="btn" id="pResume">Resume</button>
+      <button class="btn ghost" id="pRestart">Restart</button>
+    </div>
+    <div class="row"><button class="btn ghost" id="pMenu">Levels</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+// ---- World constants (logical units; the canvas is scaled to fit) ----
+const W = 400, H = 760;
+const TL = 22, TR = 378;                 // track edges
+const CANNON_Y = H - 96, BASE_Y = H - 64;
+const STEER_Y = 300;                     // above this, our crowd homes in on the tower
+const TOWER = { x: 200, y: 82, w: 124, h: 84 };
+const CELL = 20, COLS = Math.ceil(W / CELL), ROWS = Math.ceil(H / CELL) + 2;
+const MAX = 1600, MAXP = 800, TAU = Math.PI * 2;
+const FIRE_RATE = 8, CHARGE_MAX = 30;
+const SPEED = { ours: 125, oursBig: 70, theirs: 55, theirsBig: 38 };
+
+const rootStyle = getComputedStyle(document.documentElement);
+const C = {};
+for (const k of ['ink', 'lane', 'lane-line', 'ours', 'ours-deep', 'theirs', 'good', 'bad', 'paper', 'muted']) {
+  C[k] = rootStyle.getPropertyValue('--' + k).trim();
+}
+const FONT = rootStyle.getPropertyValue('--font-display').trim();
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---- Levels ----
+// op: 'x' multiplies each unit, '+' adds a burst (with a short cooldown),
+// '-' swallows units until its counter runs out, then breaks for a few seconds.
+const LEVELS = [
+  { name: 'First Volley', towerHp: 80, baseHp: 15, spawnEvery: 3, burst: 6, brute: 0,
+    gates: [{ x: 140, y: 430, w: 120, op: 'x', n: 2 }] },
+  { name: 'Double Up', towerHp: 150, baseHp: 15, spawnEvery: 2.8, burst: 10, brute: 0,
+    gates: [{ x: 40, y: 480, w: 120, op: 'x', n: 2 },
+            { x: 150, y: 330, w: 100, op: 'x', n: 3, amp: 110, spd: 1.1 }] },
+  { name: 'Toll Gate', towerHp: 220, baseHp: 15, spawnEvery: 2.6, burst: 13, brute: 0,
+    gates: [{ x: 30, y: 500, w: 100, op: 'x', n: 2 },
+            { x: 140, y: 500, w: 120, op: '-', n: 12 },
+            { x: 270, y: 500, w: 100, op: 'x', n: 2 },
+            { x: 150, y: 320, w: 100, op: '+', n: 6, amp: 90, spd: 1.4 }] },
+  { name: 'Crossfire', towerHp: 320, baseHp: 15, spawnEvery: 2.5, burst: 15, brute: 4,
+    gates: [{ x: 40, y: 530, w: 100, op: 'x', n: 2, amp: 30, spd: 1.6 },
+            { x: 230, y: 530, w: 120, op: '-', n: 18 },
+            { x: 150, y: 400, w: 100, op: 'x', n: 3, amp: 120, spd: 0.9 },
+            { x: 130, y: 260, w: 140, op: '-', n: 25, amp: 80, spd: 0.7 }] },
+  { name: 'Gauntlet', towerHp: 520, baseHp: 15, spawnEvery: 2.4, burst: 19, brute: 3,
+    gates: [{ x: 30, y: 545, w: 110, op: '+', n: 8 },
+            { x: 260, y: 545, w: 110, op: 'x', n: 2 },
+            { x: 140, y: 450, w: 120, op: '-', n: 30, amp: 100, spd: 1.0 },
+            { x: 40, y: 350, w: 100, op: 'x', n: 3, amp: 40, spd: 1.8 },
+            { x: 260, y: 350, w: 100, op: 'x', n: 2 },
+            { x: 150, y: 250, w: 100, op: '-', n: 20, amp: 120, spd: 1.3 }] },
+  { name: 'Fortress', towerHp: 600, baseHp: 15, spawnEvery: 2.2, burst: 21, brute: 2,
+    gates: [{ x: 150, y: 560, w: 100, op: 'x', n: 2, amp: 120, spd: 1.2 },
+            { x: 30, y: 460, w: 140, op: '-', n: 35 },
+            { x: 230, y: 460, w: 140, op: 'x', n: 3 },
+            { x: 150, y: 370, w: 100, op: '+', n: 10, amp: 110, spd: 1.5 },
+            { x: 40, y: 270, w: 120, op: 'x', n: 2, amp: 30, spd: 2 },
+            { x: 240, y: 270, w: 120, op: '-', n: 30, amp: 30, spd: 2 }] },
+];
+
+// ---- Unit pool (structure of arrays, no per-frame allocation) ----
+const ux = new Float32Array(MAX), uy = new Float32Array(MAX);
+const uvx = new Float32Array(MAX), uvy = new Float32Array(MAX);
+const uhp = new Float32Array(MAX), ur = new Float32Array(MAX), uspd = new Float32Array(MAX);
+const uph = new Float32Array(MAX);
+const uteam = new Uint8Array(MAX), ubig = new Uint8Array(MAX), alive = new Uint8Array(MAX);
+const umask = new Uint32Array(MAX);
+const utgt = new Int32Array(MAX);
+const act = new Int32Array(MAX), pos = new Int32Array(MAX), free = new Int32Array(MAX);
+let nAct = 0, nFree = 0;
+const count = [0, 0];
+
+// Per-team spatial grids sharing one "next" chain.
+const head = [new Int32Array(COLS * ROWS), new Int32Array(COLS * ROWS)];
+const next = new Int32Array(MAX);
+
+// Particles (ring buffer).
+const px = new Float32Array(MAXP), py = new Float32Array(MAXP);
+const pvx = new Float32Array(MAXP), pvy = new Float32Array(MAXP);
+const plife = new Float32Array(MAXP), pteam = new Uint8Array(MAXP);
+let pNext = 0;
+
+function resetPools() {
+  nAct = 0; nFree = MAX; count[0] = count[1] = 0;
+  for (let i = 0; i < MAX; i++) { free[i] = MAX - 1 - i; alive[i] = 0; }
+  plife.fill(0);
+}
+
+function spawn(team, x, y, big, mask) {
+  if (nFree === 0) return -1;
+  const i = free[--nFree];
+  ux[i] = x; uy[i] = y; uvx[i] = 0; uvy[i] = 0;
+  uteam[i] = team; ubig[i] = big ? 1 : 0; umask[i] = mask;
+  uhp[i] = big ? (team === 0 ? 12 : 10) : 1;
+  ur[i] = big ? 8 : 3.6;
+  uspd[i] = team === 0 ? (big ? SPEED.oursBig : SPEED.ours) : (big ? SPEED.theirsBig : SPEED.theirs);
+  uspd[i] *= 0.92 + Math.random() * 0.16;
+  uph[i] = Math.random() * TAU;
+  utgt[i] = -1;
+  alive[i] = 1;
+  pos[i] = nAct; act[nAct++] = i;
+  count[team]++;
+  return i;
+}
+
+function kill(i) {
+  if (!alive[i]) return;
+  alive[i] = 0;
+  const p = pos[i], last = act[--nAct];
+  act[p] = last; pos[last] = p;
+  free[nFree++] = i;
+  count[uteam[i]]--;
+  const n = ubig[i] ? 10 : 3;
+  for (let k = 0; k < n; k++) {
+    const j = pNext; pNext = (pNext + 1) % MAXP;
+    const a = Math.random() * TAU, s = 30 + Math.random() * 70;
+    px[j] = ux[i]; py[j] = uy[i]; pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s;
+    plife[j] = 0.35 + Math.random() * 0.25; pteam[j] = uteam[i];
+  }
+}
+
+function cellOf(x, y) {
+  let cx = (x / CELL) | 0, cy = ((y + CELL) / CELL) | 0;
+  if (cx < 0) cx = 0; else if (cx >= COLS) cx = COLS - 1;
+  if (cy < 0) cy = 0; else if (cy >= ROWS) cy = ROWS - 1;
+  return cy * COLS + cx;
+}
+
+function buildGrid() {
+  head[0].fill(-1); head[1].fill(-1);
+  for (let k = 0; k < nAct; k++) {
+    const i = act[k], c = cellOf(ux[i], uy[i]), h = head[uteam[i]];
+    next[i] = h[c]; h[c] = i;
+  }
+}
+
+// Nearest unit of the other team within `rad`, or -1.
+function nearestFoe(i, rad) {
+  const h = head[uteam[i] ^ 1];
+  const c = cellOf(ux[i], uy[i]), cx = c % COLS, cy = (c / COLS) | 0;
+  const cr = Math.ceil(rad / CELL);
+  const x0 = Math.max(0, cx - cr), x1 = Math.min(COLS - 1, cx + cr);
+  const y0 = Math.max(0, cy - cr), y1 = Math.min(ROWS - 1, cy + cr);
+  let best = -1, bd = rad * rad;
+  const x = ux[i], y = uy[i];
+  for (let gy = y0; gy <= y1; gy++) {
+    for (let gx = x0; gx <= x1; gx++) {
+      let j = h[gy * COLS + gx];
+      while (j !== -1) {
+        if (alive[j]) {
+          const dx = ux[j] - x, dy = uy[j] - y, d2 = dx * dx + dy * dy;
+          if (d2 < bd) { bd = d2; best = j; }
+        }
+        j = next[j];
+      }
+    }
+  }
+  return best;
+}
+
+// ---- Game state ----
+let levelIdx = 0, L = LEVELS[0];
+let state = 'menu';        // menu | play | paused | won | lost
+let attract = true;        // demo mode behind the menu
+let t = 0, frame = 0, endT = 0;
+let cannonX = 200, targetX = 200, firing = false, fireT = 0, charge = 0, shots = 0;
+let spawnT = 0, bursts = 0;
+let shake = 0;
+const tower = { hp: 0, max: 0, hit: 0 };
+const base = { hp: 0, max: 0 };
+let gates = [];
+let keyL = false, keyR = false, keySpace = false;
+
+let unlocked = 0;
+try { unlocked = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem('stickstorm.unlocked') || '0', 10) || 0); } catch (e) {}
+function saveUnlocked() { try { localStorage.setItem('stickstorm.unlocked', String(unlocked)); } catch (e) {} }
+
+function loadLevel(idx, demo) {
+  levelIdx = idx; L = LEVELS[idx]; attract = demo;
+  resetPools();
+  t = 0; frame = 0; endT = 0;
+  cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0;
+  spawnT = 1.5; bursts = 0; shake = 0;
+  tower.hp = tower.max = L.towerHp; tower.hit = 0;
+  base.hp = base.max = L.baseHp;
+  gates = L.gates.map((g, k) => ({
+    x: g.x, baseX: g.x, y: g.y, w: g.w, op: g.op, n: g.n,
+    amp: g.amp || 0, spd: g.spd || 0, phase: k * 1.7,
+    left: g.n, broken: 0, cd: 0, flash: 0, bit: 1 << k,
+    label: g.op === 'x' ? '×' + g.n : g.op === '+' ? '+' + g.n : '−' + g.n,
+  }));
+}
+
+function fire() {
+  shots++; charge++;
+  const big = charge >= CHARGE_MAX;
+  if (big) charge = 0;
+  const i = spawn(0, cannonX + (Math.random() - 0.5) * 6, CANNON_Y - 24, big, 0);
+  if (i >= 0) uvx[i] = (Math.random() - 0.5) * 24;
+}
+
+function passGate(i, g) {
+  umask[i] |= g.bit;
+  g.flash = 0.12;
+  if (g.op === '-') {
+    g.left--;
+    if (g.left <= 0) { g.broken = 4; g.left = 0; }
+    kill(i);
+    return;
+  }
+  let n = 0;
+  if (g.op === 'x') n = g.n - 1;
+  else if (g.cd <= 0) { n = g.n; g.cd = 0.3; }
+  const m = umask[i], x = ux[i], y = uy[i] - 2;
+  for (let k = 0; k < n; k++) {
+    const j = spawn(0, x + (Math.random() - 0.5) * 14, y - Math.random() * 6, false, m);
+    if (j < 0) break;
+    uvx[j] = (Math.random() - 0.5) * 70;
+  }
+}
+
+function hitTower(d) {
+  if (tower.hp <= 0) return;
+  tower.hp = Math.max(0, tower.hp - d);
+  tower.hit = 0.1;
+  if (tower.hp === 0) {
+    for (let k = 0; k < 40; k++) {
+      const j = pNext; pNext = (pNext + 1) % MAXP;
+      const a = Math.random() * TAU, s = 60 + Math.random() * 160;
+      px[j] = TOWER.x + (Math.random() - 0.5) * TOWER.w; py[j] = TOWER.y + (Math.random() - 0.5) * TOWER.h;
+      pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s; plife[j] = 0.8; pteam[j] = 1;
+    }
+    endRound('won');
+  }
+}
+
+function hitBase(d) {
+  if (base.hp <= 0) return;
+  base.hp = Math.max(0, base.hp - d);
+  shake = 0.18;
+  if (base.hp === 0) endRound('lost');
+}
+
+function endRound(result) {
+  if (attract) { endT = 1.2; state = result; return; }
+  if (state !== 'play') return;
+  state = result; endT = 1.0; firing = false;
+  if (result === 'won' && levelIdx + 1 > unlocked && levelIdx + 1 < LEVELS.length) { unlocked = levelIdx + 1; saveUnlocked(); }
+}
+
+// ---- Simulation ----
+function update(dt) {
+  t += dt; frame++;
+  const playing = state === 'play' || (attract && state === 'menu');
+
+  if (attract && state === 'menu') {
+    targetX = 200 + Math.sin(t * 0.8) * 120 + Math.sin(t * 2.3) * 30;
+    firing = true;
+  } else if (state === 'play') {
+    if (keyL) targetX -= 260 * dt;
+    if (keyR) targetX += 260 * dt;
+    if (keySpace) firing = true;
+  }
+  targetX = Math.max(TL + 18, Math.min(TR - 18, targetX));
+  cannonX += (targetX - cannonX) * Math.min(1, dt * 20);
+
+  if (playing && firing) {
+    fireT -= dt;
+    if (fireT <= 0) { fire(); fireT += 1 / FIRE_RATE; if (fireT < 0) fireT = 0; }
+  } else if (fireT > 0) fireT = Math.max(0, fireT - dt);
+
+  if (playing && tower.hp > 0) {
+    spawnT -= dt;
+    if (spawnT <= 0) {
+      spawnT += L.spawnEvery;
+      bursts++;
+      // Waves grow as the round drags on.
+      const n = Math.round(L.burst * (1 + bursts * 0.04));
+      for (let k = 0; k < n; k++) {
+        spawn(1, TOWER.x + (Math.random() - 0.5) * 110, TOWER.y + TOWER.h / 2 + 6 + Math.random() * 24, false, 0);
+      }
+      if (L.brute && bursts % L.brute === 0) spawn(1, TOWER.x, TOWER.y + TOWER.h / 2 + 12, true, 0);
+    }
+  }
+
+  for (let k = 0; k < gates.length; k++) {
+    const g = gates[k];
+    if (g.amp) g.x = Math.max(TL, Math.min(TR - g.w, g.baseX + Math.sin(t * g.spd + g.phase) * g.amp));
+    if (g.cd > 0) g.cd -= dt;
+    if (g.flash > 0) g.flash -= dt;
+    if (g.broken > 0) { g.broken -= dt; if (g.broken <= 0) { g.broken = 0; g.left = g.n; } }
+  }
+
+  buildGrid();
+
+  // Movement, gates, tower and base contact.
+  for (let k = nAct - 1; k >= 0; k--) {
+    if (k >= nAct) continue;
+    const i = act[k];
+    const team = uteam[i], sp = uspd[i];
+    uph[i] += dt * sp * 0.13;
+    if (((frame + i) & 3) === 0) utgt[i] = nearestFoe(i, team === 0 ? 60 : 85);
+    let tg = utgt[i];
+    if (tg >= 0 && (!alive[tg] || uteam[tg] === team)) { tg = -1; utgt[i] = -1; }
+    if (tg >= 0) {
+      const dx = ux[tg] - ux[i], dy = uy[tg] - uy[i], d = Math.sqrt(dx * dx + dy * dy) || 1;
+      uvx[i] = dx / d * sp; uvy[i] = dy / d * sp;
+    } else if (team === 0) {
+      uvy[i] = -sp;
+      if (uy[i] < STEER_Y) {
+        let v = (TOWER.x - ux[i]) * 1.6;
+        uvx[i] = v > sp ? sp : v < -sp ? -sp : v;
+      } else uvx[i] *= Math.max(0, 1 - 3 * dt);
+    } else {
+      uvy[i] = sp;
+      const v = (cannonX - ux[i]) * 0.25, lim = sp * 0.5;
+      uvx[i] = v > lim ? lim : v < -lim ? -lim : v;
+    }
+    const oy = uy[i];
+    let nx = ux[i] + uvx[i] * dt;
+    const ny = oy + uvy[i] * dt;
+    if (nx < TL + 4) nx = TL + 4; else if (nx > TR - 4) nx = TR - 4;
+    ux[i] = nx; uy[i] = ny;
+
+    if (team === 0) {
+      for (let gi = 0; gi < gates.length; gi++) {
+        const g = gates[gi];
+        if (oy >= g.y && ny < g.y && nx >= g.x && nx <= g.x + g.w && !(umask[i] & g.bit) && !(g.op === '-' && g.broken > 0)) {
+          passGate(i, g);
+          if (!alive[i]) break;
+        }
+      }
+      if (!alive[i]) continue;
+      if (ny <= TOWER.y + TOWER.h / 2 && nx > TOWER.x - TOWER.w / 2 && nx < TOWER.x + TOWER.w / 2) {
+        hitTower(uhp[i]); kill(i);
+      } else if (ny < -10) kill(i);
+    } else if (ny >= BASE_Y) {
+      hitBase(uhp[i]); kill(i);
+    }
+  }
+
+  // Combat: our units against nearby enemies, using the enemy grid.
+  const eh = head[1];
+  for (let k = nAct - 1; k >= 0; k--) {
+    if (k >= nAct) continue;
+    const i = act[k];
+    if (uteam[i] !== 0) continue;
+    const c = cellOf(ux[i], uy[i]), cx = c % COLS, cy = (c / COLS) | 0;
+    let dead = false;
+    for (let gy = Math.max(0, cy - 1); gy <= Math.min(ROWS - 1, cy + 1) && !dead; gy++) {
+      for (let gx = Math.max(0, cx - 1); gx <= Math.min(COLS - 1, cx + 1) && !dead; gx++) {
+        let j = eh[gy * COLS + gx];
+        while (j !== -1) {
+          if (alive[j]) {
+            const dx = ux[j] - ux[i], dy = uy[j] - uy[i], rr = ur[i] + ur[j];
+            if (dx * dx + dy * dy < rr * rr) {
+              const d = Math.min(uhp[i], uhp[j]);
+              uhp[i] -= d; uhp[j] -= d;
+              if (uhp[j] <= 0) kill(j);
+              if (uhp[i] <= 0) { kill(i); dead = true; break; }
+            }
+          }
+          j = next[j];
+        }
+      }
+    }
+  }
+
+  for (let j = 0; j < MAXP; j++) {
+    if (plife[j] <= 0) continue;
+    plife[j] -= dt;
+    px[j] += pvx[j] * dt; py[j] += pvy[j] * dt;
+    pvx[j] *= 0.92; pvy[j] *= 0.92;
+  }
+
+  if (tower.hit > 0) tower.hit -= dt;
+  if (shake > 0) shake -= dt;
+
+  if (state === 'won' || state === 'lost') {
+    endT -= dt;
+    if (endT <= 0) {
+      if (attract) { loadLevel(levelIdx, true); state = 'menu'; }
+      else if (overlay.hidden) showResult();
+    }
+  }
+}
+
+// ---- Rendering ----
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d', { alpha: false });
+let dpr = 1, scale = 1, offX = 0, offY = 0, cssW = 0, cssH = 0;
+
+function resize() {
+  const r = cv.getBoundingClientRect();
+  cssW = r.width; cssH = r.height;
+  dpr = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+  scale = Math.min(cssW / W, cssH / H);
+  offX = (cssW - W * scale) / 2; offY = (cssH - H * scale) / 2;
+}
+window.addEventListener('resize', resize);
+
+function rrect(x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Batch all stick figures of one team and size into two paths.
+function drawCrowd(team, big) {
+  const s = big ? 2.3 : 1;
+  ctx.beginPath();
+  for (let k = 0; k < nAct; k++) {
+    const i = act[k];
+    if (uteam[i] !== team || ubig[i] !== big) continue;
+    const x = ux[i], y = uy[i] - 5 * s;
+    ctx.moveTo(x + 2.8 * s, y);
+    ctx.arc(x, y, 2.8 * s, 0, TAU);
+  }
+  ctx.fill();
+  ctx.beginPath();
+  for (let k = 0; k < nAct; k++) {
+    const i = act[k];
+    if (uteam[i] !== team || ubig[i] !== big) continue;
+    const x = ux[i], y = uy[i], w = Math.sin(uph[i]) * 2.2 * s;
+    ctx.moveTo(x, y - 2.2 * s); ctx.lineTo(x, y + 2.4 * s);
+    ctx.moveTo(x, y + 2.4 * s); ctx.lineTo(x - 1.4 * s + w, y + 6.4 * s);
+    ctx.moveTo(x, y + 2.4 * s); ctx.lineTo(x + 1.4 * s - w, y + 6.4 * s);
+    ctx.moveTo(x - 2.8 * s, y + 0.4 * s - w * 0.4); ctx.lineTo(x + 2.8 * s, y + 0.4 * s + w * 0.4);
+  }
+  ctx.lineWidth = 1.7 * s;
+  ctx.stroke();
+}
+
+function draw() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  let sx = 0, sy = 0;
+  if (shake > 0 && !reduceMotion) { sx = (Math.random() - 0.5) * 6; sy = (Math.random() - 0.5) * 6; }
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * (offX + sx * scale), dpr * (offY + sy * scale));
+
+  // Track with scrolling chevrons.
+  ctx.fillStyle = C.lane;
+  ctx.beginPath(); rrect(TL, 0, TR - TL, H, 18); ctx.fill();
+  ctx.strokeStyle = C['lane-line']; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  const off = (t * 40) % 60;
+  for (let y = H + 60 - off; y > TOWER.y + 40; y -= 60) {
+    for (let c = 0; c < 3; c++) {
+      const cx = 90 + c * 110;
+      ctx.moveTo(cx - 14, y); ctx.lineTo(cx, y - 12); ctx.lineTo(cx + 14, y);
+    }
+  }
+  ctx.stroke();
+
+  // Base line.
+  ctx.fillStyle = base.hp / base.max < 0.35 ? C.bad : C['lane-line'];
+  ctx.fillRect(TL, BASE_Y + 4, TR - TL, 4);
+
+  // Gates.
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let k = 0; k < gates.length; k++) {
+    const g = gates[k];
+    const good = g.op !== '-';
+    const col = good ? C.good : C.bad;
+    const broken = g.broken > 0;
+    ctx.globalAlpha = broken ? 0.18 : g.flash > 0 ? 0.55 : 0.32;
+    ctx.fillStyle = col;
+    ctx.beginPath(); rrect(g.x, g.y - 13, g.w, 26, 7); ctx.fill();
+    ctx.globalAlpha = broken ? 0.35 : 1;
+    ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+    ctx.beginPath(); rrect(g.x, g.y - 13, g.w, 26, 7); ctx.stroke();
+    ctx.fillStyle = C.paper;
+    ctx.font = '20px ' + FONT;
+    ctx.fillText(g.op === '-' ? (broken ? 'broken' : '−' + g.left) : g.label, g.x + g.w / 2, g.y + 1);
+    ctx.globalAlpha = 1;
+  }
+
+  // Tower.
+  const tx = TOWER.x - TOWER.w / 2, ty = TOWER.y - TOWER.h / 2;
+  const hitOff = tower.hit > 0 && !reduceMotion ? (Math.random() - 0.5) * 3 : 0;
+  if (tower.hp > 0) {
+    ctx.fillStyle = C.theirs;
+    ctx.beginPath();
+    rrect(tx + hitOff, ty + 12, TOWER.w, TOWER.h - 12, 8);
+    for (let c = 0; c < 4; c++) ctx.rect(tx + hitOff + 4 + c * 32, ty, 20, 16);
+    ctx.fill();
+    ctx.fillStyle = C.ink;
+    ctx.beginPath(); rrect(TOWER.x - 16 + hitOff, ty + TOWER.h - 30, 32, 30, 12); ctx.fill();
+    ctx.fillStyle = C.paper;
+    ctx.font = '30px ' + FONT;
+    ctx.fillText(String(Math.ceil(tower.hp)), TOWER.x + hitOff, ty + 38);
+  }
+  // Tower HP bar.
+  ctx.fillStyle = C.ink; ctx.fillRect(tx, ty - 14, TOWER.w, 7);
+  ctx.fillStyle = C.theirs; ctx.fillRect(tx, ty - 14, TOWER.w * tower.hp / tower.max, 7);
+
+  // Crowds.
+  ctx.lineCap = 'round';
+  ctx.fillStyle = C.theirs; ctx.strokeStyle = C.theirs;
+  drawCrowd(1, 0); drawCrowd(1, 1);
+  ctx.fillStyle = C.ours; ctx.strokeStyle = C.ours;
+  drawCrowd(0, 0); drawCrowd(0, 1);
+
+  // Particles.
+  for (let team = 0; team < 2; team++) {
+    ctx.fillStyle = team ? C.theirs : C.ours;
+    ctx.beginPath();
+    for (let j = 0; j < MAXP; j++) {
+      if (plife[j] <= 0 || pteam[j] !== team) continue;
+      const s = 1 + plife[j] * 5;
+      ctx.rect(px[j] - s / 2, py[j] - s / 2, s, s);
+    }
+    ctx.fill();
+  }
+
+  // Cannon with charge ring.
+  const cx = cannonX, cy = CANNON_Y;
+  ctx.strokeStyle = C['lane-line']; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(cx, cy, 24, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = charge >= CHARGE_MAX - 1 ? C.paper : C.ours;
+  ctx.beginPath(); ctx.arc(cx, cy, 24, -Math.PI / 2, -Math.PI / 2 + TAU * charge / CHARGE_MAX); ctx.stroke();
+  ctx.fillStyle = C['ours-deep'];
+  ctx.beginPath(); rrect(cx - 7, cy - 34, 14, 26, 5); ctx.fill();
+  ctx.fillStyle = C.ours;
+  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, TAU); ctx.fill();
+  ctx.fillStyle = C.ink;
+  ctx.font = '13px ' + FONT;
+  ctx.fillText(String(CHARGE_MAX - charge), cx, cy + 1);
+
+  // HUD.
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = C.muted; ctx.font = '13px ' + FONT;
+  ctx.fillText('LEVEL ' + (levelIdx + 1), TL + 4, 24);
+  ctx.fillStyle = C.paper; ctx.font = '18px ' + FONT;
+  ctx.fillText(L.name, TL + 4, 44);
+
+  const by = H - 30;
+  ctx.fillStyle = C.muted; ctx.font = '13px ' + FONT;
+  ctx.fillText('BASE', TL + 4, by - 6);
+  ctx.textAlign = 'right';
+  ctx.fillText('CROWD ' + count[0], TR - 4, by - 6);
+  ctx.fillStyle = C.ink; ctx.fillRect(TL + 4, by, TR - TL - 8, 8);
+  ctx.fillStyle = base.hp / base.max < 0.35 ? C.bad : C.good;
+  ctx.fillRect(TL + 4, by, (TR - TL - 8) * base.hp / base.max, 8);
+
+  if (state === 'play' && shots === 0) {
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.3;
+    ctx.fillStyle = C.paper; ctx.font = '22px ' + FONT;
+    ctx.fillText('Drag to aim · hold to fire', W / 2, CANNON_Y - 70);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ---- Loop ----
+let last = performance.now();
+function loop(now) {
+  let dt = (now - last) / 1000; last = now;
+  if (dt > 1 / 30) dt = 1 / 30;
+  if (state !== 'paused') update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ---- Input ----
+function worldX(clientX) {
+  const r = cv.getBoundingClientRect();
+  return (clientX - r.left - offX) / scale;
+}
+cv.addEventListener('pointerdown', e => {
+  if (state !== 'play') return;
+  cv.setPointerCapture(e.pointerId);
+  firing = true; targetX = worldX(e.clientX);
+  e.preventDefault();
+});
+cv.addEventListener('pointermove', e => { if (firing && state === 'play') targetX = worldX(e.clientX); });
+const stop = () => { firing = false; };
+cv.addEventListener('pointerup', stop);
+cv.addEventListener('pointercancel', stop);
+addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft') keyL = true;
+  else if (e.code === 'ArrowRight') keyR = true;
+  else if (e.code === 'Space' && state === 'play') { keySpace = true; e.preventDefault(); }
+  else if (e.code === 'Escape' && state === 'play') pause();
+});
+addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft') keyL = false;
+  else if (e.code === 'ArrowRight') keyR = false;
+  else if (e.code === 'Space') { keySpace = false; firing = false; }
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') pause(); });
+
+// ---- Menus ----
+const overlay = document.getElementById('overlay');
+const menuEl = document.getElementById('menu'), resultEl = document.getElementById('result'), pausedEl = document.getElementById('paused');
+const pauseBtn = document.getElementById('pauseBtn');
+const levelsEl = document.getElementById('levels');
+
+function showPanel(el) {
+  overlay.hidden = !el;
+  for (const p of [menuEl, resultEl, pausedEl]) p.hidden = p !== el;
+  pauseBtn.hidden = !!el;
+}
+
+function renderLevels() {
+  levelsEl.textContent = '';
+  LEVELS.forEach((lv, i) => {
+    const b = document.createElement('button');
+    b.className = 'lvl' + (i < unlocked ? ' done' : '');
+    b.disabled = i > unlocked;
+    b.innerHTML = '<b>' + (i + 1) + '</b><span></span>';
+    b.querySelector('span').textContent = i > unlocked ? 'Locked' : lv.name;
+    b.addEventListener('click', () => startLevel(i));
+    levelsEl.appendChild(b);
+  });
+}
+
+function showMenu() {
+  renderLevels();
+  loadLevel(unlocked, true);
+  state = 'menu';
+  showPanel(menuEl);
+}
+
+function startLevel(i) {
+  loadLevel(i, false);
+  state = 'play';
+  showPanel(null);
+}
+
+function pause() { if (state !== 'play') return; state = 'paused'; firing = false; showPanel(pausedEl); }
+
+function showResult() {
+  const won = state === 'won';
+  const lastLevel = levelIdx === LEVELS.length - 1;
+  document.getElementById('resEyebrow').textContent = 'Level ' + (levelIdx + 1) + ' · ' + L.name;
+  document.getElementById('resTitle').textContent = won ? (lastLevel ? 'Every tower is down' : 'Tower down') : 'Base overrun';
+  document.getElementById('resText').textContent = won
+    ? shots + ' shots fired, base at ' + base.hp + ' of ' + base.max + '.'
+    : 'The tower still had ' + Math.ceil(tower.hp) + ' of ' + tower.max + ' left.';
+  const primary = document.getElementById('resPrimary');
+  primary.textContent = won ? (lastLevel ? 'Play again' : 'Next level') : 'Retry';
+  primary.onclick = () => startLevel(won ? (lastLevel ? 0 : levelIdx + 1) : levelIdx);
+  showPanel(resultEl);
+  primary.focus({ preventScroll: true });
+}
+
+pauseBtn.addEventListener('click', pause);
+document.getElementById('resMenu').addEventListener('click', showMenu);
+document.getElementById('pResume').addEventListener('click', () => { state = 'play'; showPanel(null); });
+document.getElementById('pRestart').addEventListener('click', () => startLevel(levelIdx));
+document.getElementById('pMenu').addEventListener('click', showMenu);
+
+// Offline support when served as a standalone site (not inside an embed or a file:// page).
+try {
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+} catch (e) {}
+
+// Debug hook for testing.
+window.__stickstorm = { get state() { return state; }, get crowd() { return count[0]; }, get enemies() { return count[1]; }, get tower() { return tower.hp; }, get base() { return base.hp; }, startLevel, LEVELS,
+  step(n, aimX) { for (let k = 0; k < n; k++) { if (aimX !== undefined) targetX = aimX(t); if (state === 'play') firing = true; update(1 / 60); } } };
+
+resize();
+showMenu();
+requestAnimationFrame(loop);
+})();
+</script>
