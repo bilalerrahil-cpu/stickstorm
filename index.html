@@ -20,14 +20,20 @@
   --ink: #16213a;
   --lane: #22325a;
   --lane-line: #2e4274;
+  --rock: #3a5288;
+  --rock-edge: #5671b0;
   --ours: #ffcf33;
+  --ours-light: #fff0a0;
   --ours-deep: #c9930a;
+  --ours-hot: #ff9f1c;
   --theirs: #ff4f7b;
+  --theirs-light: #ff9bb8;
+  --theirs-deep: #d8305f;
   --good: #2fd6a0;
   --bad: #ff7a45;
   --paper: #f3f6ff;
   --muted: #9fb0d6;
-  --scrim: rgba(16, 24, 44, 0.78);
+  --scrim: rgba(16, 24, 44, 0.8);
   --font-display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
   --font-body: "Nunito", ui-rounded, system-ui, -apple-system, sans-serif;
   color-scheme: dark;
@@ -55,14 +61,14 @@ body {
 #cv { display: block; width: 100%; height: 100%; touch-action: none; }
 #pauseBtn {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 10px);
-  right: calc(env(safe-area-inset-right, 0px) + 10px);
-  width: 44px; height: 44px;
-  border-radius: 12px;
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  right: calc(env(safe-area-inset-right, 0px) + 6px);
+  width: 36px; height: 36px;
+  border-radius: 10px;
   border: 2px solid var(--lane-line);
   background: var(--lane);
   color: var(--paper);
-  font: 18px/1 var(--font-display);
+  font: 15px/1 var(--font-display);
   letter-spacing: 2px;
   cursor: pointer;
 }
@@ -70,8 +76,6 @@ body {
   position: fixed;
   inset: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
   background: var(--scrim);
   padding-block: calc(env(safe-area-inset-top, 0px) + 16px) calc(env(safe-area-inset-bottom, 0px) + 16px);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -79,8 +83,9 @@ body {
   overflow-y: auto;
 }
 .panel {
+  margin: auto;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -88,7 +93,7 @@ body {
 }
 h1 {
   margin: 0;
-  font: 64px/0.95 var(--font-display);
+  font: 60px/0.95 var(--font-display);
   color: var(--ours);
   text-shadow: 4px 4px 0 var(--theirs);
   letter-spacing: 1px;
@@ -96,12 +101,12 @@ h1 {
 }
 h2 {
   margin: 0;
-  font: 44px/1 var(--font-display);
+  font: 40px/1 var(--font-display);
   color: var(--ours);
   text-wrap: balance;
 }
-.tag, .how, .res-text { margin: 0; font-size: 16px; line-height: 1.45; color: var(--muted); }
-.how { font-size: 14px; }
+.tag, .how, .res-text { margin: 0; font-size: 15px; line-height: 1.45; color: var(--muted); }
+.how { font-size: 13px; }
 .eyebrow {
   margin: 0;
   font: 800 12px/1 var(--font-body);
@@ -109,21 +114,48 @@ h2 {
   letter-spacing: 0.14em;
   color: var(--good);
 }
-.levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
+.levels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; text-align: left; }
+.world {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  font: 800 11px/1 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
 .lvl {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 12px 4px 10px;
-  border-radius: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 2px 6px;
+  border-radius: 12px;
   border: 2px solid var(--lane-line);
   background: var(--lane);
   color: var(--paper);
   cursor: pointer;
   font-family: var(--font-body);
 }
-.lvl b { font: 30px/1 var(--font-display); color: var(--ours); }
-.lvl span { font-size: 11px; font-weight: 800; color: var(--muted); }
-.lvl:disabled { opacity: 0.38; cursor: default; }
+.lvl b { font: 24px/1 var(--font-display); color: var(--ours); }
+.lvl span { font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lvl.boss span { color: var(--theirs); }
+.lvl:disabled { opacity: 0.35; cursor: default; }
 .lvl.done b { color: var(--good); }
+.cannons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; }
+.cannon {
+  display: flex; flex-direction: column; gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--lane-line);
+  background: var(--lane);
+  color: var(--paper);
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: left;
+}
+.cannon b { font: 20px/1 var(--font-display); color: var(--ours); }
+.cannon span { font-size: 12px; line-height: 1.3; color: var(--muted); }
+.cannon i { font-style: normal; font-size: 11px; font-weight: 800; color: var(--paper); font-variant-numeric: tabular-nums; }
+.cannon.on { border-color: var(--ours); box-shadow: inset 0 0 0 1px var(--ours); }
+.cannon:disabled { opacity: 0.35; cursor: default; }
 .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .btn {
   flex: 1 1 140px;
@@ -147,9 +179,18 @@ button:focus-visible { outline: 3px solid var(--good); outline-offset: 3px; }
 <div id="overlay">
   <div class="panel" id="menu">
     <h1>Stickstorm</h1>
-    <p class="tag">Fire your crowd through the gates and knock down the tower before its army reaches you.</p>
+    <p class="tag">Fire your crowd through the gates and knock down every tower before their army reaches you.</p>
     <div class="levels" id="levels"></div>
-    <p class="how">Drag to slide the cannon. Hold to keep firing. Every 30 shots launches a heavy.</p>
+    <p class="how">Drag to slide the cannon. Hold to keep firing. Beat levels to unlock new cannons.</p>
+  </div>
+  <div class="panel" id="pick" hidden>
+    <p class="eyebrow" id="pickEyebrow"></p>
+    <h2>Choose a cannon</h2>
+    <div class="cannons" id="cannons"></div>
+    <div class="row">
+      <button class="btn" id="pickStart">Start</button>
+      <button class="btn ghost" id="pickBack">Levels</button>
+    </div>
   </div>
   <div class="panel" id="result" hidden>
     <p class="eyebrow" id="resEyebrow"></p>
@@ -157,8 +198,9 @@ button:focus-visible { outline: 3px solid var(--good); outline-offset: 3px; }
     <p class="res-text" id="resText"></p>
     <div class="row">
       <button class="btn" id="resPrimary"></button>
-      <button class="btn ghost" id="resMenu">Levels</button>
+      <button class="btn ghost" id="resCannon">Cannon</button>
     </div>
+    <div class="row"><button class="btn ghost" id="resMenu">Levels</button></div>
   </div>
   <div class="panel" id="paused" hidden>
     <h2>Paused</h2>
@@ -178,62 +220,146 @@ button:focus-visible { outline: 3px solid var(--good); outline-offset: 3px; }
 const W = 400, H = 760;
 const TL = 22, TR = 378;                 // track edges
 const CANNON_Y = H - 96, BASE_Y = H - 64;
-const STEER_Y = 300;                     // above this, our crowd homes in on the tower
-const TOWER = { x: 200, y: 82, w: 124, h: 84 };
 const CELL = 20, COLS = Math.ceil(W / CELL), ROWS = Math.ceil(H / CELL) + 2;
-const MAX = 1600, MAXP = 800, TAU = Math.PI * 2;
-const FIRE_RATE = 8, CHARGE_MAX = 30;
-const SPEED = { ours: 125, oursBig: 70, theirs: 55, theirsBig: 38 };
+const MAX = 1800, MAXP = 900, MAXQ = 400, MAXR = 24, TAU = Math.PI * 2;
+const ENEMY_PACE = 0.45;                 // enemies walk at this fraction of our speed
 
 const rootStyle = getComputedStyle(document.documentElement);
 const C = {};
-for (const k of ['ink', 'lane', 'lane-line', 'ours', 'ours-deep', 'theirs', 'good', 'bad', 'paper', 'muted']) {
+for (const k of ['ink', 'lane', 'lane-line', 'rock', 'rock-edge', 'ours', 'ours-light', 'ours-deep', 'ours-hot',
+  'theirs', 'theirs-light', 'theirs-deep', 'good', 'bad', 'paper', 'muted']) {
   C[k] = rootStyle.getPropertyValue('--' + k).trim();
 }
 const FONT = rootStyle.getPropertyValue('--font-display').trim();
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// ---- Unit types ----
+const T = { STICK: 0, RUNNER: 1, TANK: 2, ARCHER: 3, BOMBER: 4, HEAVY: 5, GIANT: 6 };
+const NT = 7;
+// base: damage dealt to our base when an enemy of this type gets through.
+const UNIT = [
+  { hp: 1,  spd: 125, r: 3.6, s: 1,   base: 1 },  // stickman
+  { hp: 1,  spd: 190, r: 3.2, s: 0.9, base: 1 },  // runner
+  { hp: 6,  spd: 85,  r: 6,   s: 1.6, base: 2 },  // tank
+  { hp: 1,  spd: 110, r: 3.6, s: 1,   base: 1 },  // archer
+  { hp: 2,  spd: 100, r: 4.5, s: 1.2, base: 2 },  // bomber
+  { hp: 12, spd: 70,  r: 8,   s: 2.3, base: 4 },  // heavy
+  { hp: 60, spd: 66,  r: 16,  s: 4.4, base: 8 },  // giant (boss only)
+];
+const TCOL = [
+  [C.ours, C['ours-light'], C['ours-deep'], C.ours, C['ours-hot'], C.ours, C.ours],
+  [C.theirs, C['theirs-light'], C['theirs-deep'], C.theirs, C.theirs, C.theirs, C['theirs-deep']],
+];
+const ARCHER_RANGE = 110, ARCHER_RELOAD = 1.0, ARROW_SPEED = 280;
+const BOMB_RADIUS = 30, BOMB_DAMAGE = 3, BOMB_TOWER_DAMAGE = 6;
+
+// ---- Cannons ----
+// unlock: number of levels you must have beaten.
+const CANNONS = [
+  { name: 'Classic', desc: 'A steady stream of stickmen.', type: T.STICK, rate: 8, pattern: 'single', charge: 30, unlock: 0 },
+  { name: 'Rapid', desc: 'Fast, fragile runners.', type: T.RUNNER, rate: 11, pattern: 'single', charge: 45, unlock: 3 },
+  { name: 'Spread', desc: 'Three-way fan of stickmen.', type: T.STICK, rate: 4, pattern: 'spread', charge: 20, unlock: 6 },
+  { name: 'Siege', desc: 'Slow tanks with 6 HP. Gates add stickmen, not tanks.', type: T.TANK, rate: 3.2, pattern: 'single', charge: 15, unlock: 9 },
+  { name: 'Longbow', desc: 'Archers that stop and shoot from range.', type: T.ARCHER, rate: 3.5, pattern: 'single', charge: 30, unlock: 12 },
+  { name: 'Mortar', desc: 'Lobbed bombers that fly over the first gates and blast crowds.', type: T.BOMBER, rate: 3, pattern: 'lob', charge: 25, unlock: 15 },
+];
+
 // ---- Levels ----
-// op: 'x' multiplies each unit, '+' adds a burst (with a short cooldown),
+// Gates: 'x' multiplies each unit, '+' adds a burst (short cooldown),
 // '-' swallows units until its counter runs out, then breaks for a few seconds.
+// Obstacles: wall (rect, optional sideways drift), bar (spinning beam), bump (round bumper).
+const WORLDS = ['Meadow', 'Gearworks', 'Bumper Bay', 'Storm Front'];
+const tw = (x, hp, o) => Object.assign({ x, y: 92, w: 124, h: 84, hp, every: 2.8, burst: 8, mix: [T.STICK], brute: 0 }, o);
+const twin = (x, hp, o) => tw(x, hp, Object.assign({ w: 100, h: 76 }, o));
+const tri = (x, hp, o) => tw(x, hp, Object.assign({ y: 100, w: 90, h: 70, every: 3, burst: 7 }, o));
+const boss = (hp, o) => tw(200, hp, Object.assign({ w: 170, h: 96, boss: true, amp: 70, spd: 0.6 }, o));
+
 const LEVELS = [
-  { name: 'First Volley', towerHp: 80, baseHp: 15, spawnEvery: 3, burst: 6, brute: 0,
+  // World 1: Meadow
+  { name: 'First Volley', towers: [tw(200, 80, { every: 3, burst: 6 })],
     gates: [{ x: 140, y: 430, w: 120, op: 'x', n: 2 }] },
-  { name: 'Double Up', towerHp: 150, baseHp: 15, spawnEvery: 2.8, burst: 10, brute: 0,
-    gates: [{ x: 40, y: 480, w: 120, op: 'x', n: 2 },
-            { x: 150, y: 330, w: 100, op: 'x', n: 3, amp: 110, spd: 1.1 }] },
-  { name: 'Toll Gate', towerHp: 220, baseHp: 15, spawnEvery: 2.6, burst: 13, brute: 0,
-    gates: [{ x: 30, y: 500, w: 100, op: 'x', n: 2 },
-            { x: 140, y: 500, w: 120, op: '-', n: 12 },
-            { x: 270, y: 500, w: 100, op: 'x', n: 2 },
-            { x: 150, y: 320, w: 100, op: '+', n: 6, amp: 90, spd: 1.4 }] },
-  { name: 'Crossfire', towerHp: 320, baseHp: 15, spawnEvery: 2.5, burst: 15, brute: 4,
-    gates: [{ x: 40, y: 530, w: 100, op: 'x', n: 2, amp: 30, spd: 1.6 },
-            { x: 230, y: 530, w: 120, op: '-', n: 18 },
-            { x: 150, y: 400, w: 100, op: 'x', n: 3, amp: 120, spd: 0.9 },
-            { x: 130, y: 260, w: 140, op: '-', n: 25, amp: 80, spd: 0.7 }] },
-  { name: 'Gauntlet', towerHp: 520, baseHp: 15, spawnEvery: 2.4, burst: 19, brute: 3,
-    gates: [{ x: 30, y: 545, w: 110, op: '+', n: 8 },
-            { x: 260, y: 545, w: 110, op: 'x', n: 2 },
-            { x: 140, y: 450, w: 120, op: '-', n: 30, amp: 100, spd: 1.0 },
-            { x: 40, y: 350, w: 100, op: 'x', n: 3, amp: 40, spd: 1.8 },
-            { x: 260, y: 350, w: 100, op: 'x', n: 2 },
-            { x: 150, y: 250, w: 100, op: '-', n: 20, amp: 120, spd: 1.3 }] },
-  { name: 'Fortress', towerHp: 600, baseHp: 15, spawnEvery: 2.2, burst: 21, brute: 2,
-    gates: [{ x: 150, y: 560, w: 100, op: 'x', n: 2, amp: 120, spd: 1.2 },
-            { x: 30, y: 460, w: 140, op: '-', n: 35 },
-            { x: 230, y: 460, w: 140, op: 'x', n: 3 },
-            { x: 150, y: 370, w: 100, op: '+', n: 10, amp: 110, spd: 1.5 },
-            { x: 40, y: 270, w: 120, op: 'x', n: 2, amp: 30, spd: 2 },
-            { x: 240, y: 270, w: 120, op: '-', n: 30, amp: 30, spd: 2 }] },
+  { name: 'Double Up', towers: [tw(200, 150, { burst: 10 })],
+    gates: [{ x: 40, y: 480, w: 120, op: 'x', n: 2 }, { x: 150, y: 330, w: 100, op: 'x', n: 3, amp: 110, spd: 1.1 }] },
+  { name: 'Toll Gate', towers: [tw(200, 220, { every: 2.6, burst: 13 })],
+    gates: [{ x: 30, y: 500, w: 100, op: 'x', n: 2 }, { x: 140, y: 500, w: 120, op: '-', n: 12 },
+            { x: 270, y: 500, w: 100, op: 'x', n: 2 }, { x: 150, y: 320, w: 100, op: '+', n: 6, amp: 90, spd: 1.4 }] },
+  { name: 'Breakwater', towers: [tw(200, 280, { every: 2.6, burst: 13 })],
+    obs: [{ k: 'wall', x: 130, y: 410, w: 140, h: 16 }],
+    gates: [{ x: 30, y: 520, w: 100, op: 'x', n: 2 }, { x: 270, y: 520, w: 100, op: 'x', n: 2 },
+            { x: 150, y: 300, w: 100, op: 'x', n: 3, amp: 100, spd: 1 }] },
+  { name: 'Iron Keep', towers: [boss(520, { every: 2.6, burst: 12, brute: 4 })],
+    obs: [{ k: 'wall', x: 40, y: 300, w: 80, h: 14 }, { k: 'wall', x: 280, y: 300, w: 80, h: 14 }],
+    gates: [{ x: 40, y: 520, w: 110, op: 'x', n: 2 }, { x: 250, y: 520, w: 110, op: 'x', n: 2 },
+            { x: 150, y: 400, w: 100, op: '+', n: 6, amp: 100, spd: 1.2 }] },
+  // World 2: Gearworks
+  { name: 'Spinner', towers: [tw(200, 300, { every: 2.5, burst: 14 })],
+    obs: [{ k: 'bar', x: 200, y: 400, len: 150, spd: 1.2 }],
+    gates: [{ x: 150, y: 530, w: 100, op: 'x', n: 3 }, { x: 40, y: 300, w: 100, op: 'x', n: 2 }, { x: 260, y: 300, w: 100, op: 'x', n: 2 }] },
+  { name: 'Twin Peaks', towers: [twin(110, 170), twin(290, 170)],
+    gates: [{ x: 150, y: 510, w: 100, op: 'x', n: 2, amp: 120, spd: 1 }, { x: 30, y: 370, w: 110, op: 'x', n: 2 },
+            { x: 150, y: 370, w: 100, op: '-', n: 15 }, { x: 260, y: 370, w: 110, op: 'x', n: 2 }] },
+  { name: 'Mill Race', towers: [tw(200, 360, { every: 2.5, burst: 15, brute: 4 })],
+    obs: [{ k: 'bar', x: 115, y: 460, len: 120, spd: 1.6 }, { k: 'bar', x: 285, y: 460, len: 120, spd: -1.6 },
+          { k: 'wall', x: 22, y: 250, w: 100, h: 14 }],
+    gates: [{ x: 150, y: 570, w: 100, op: 'x', n: 3 }, { x: 150, y: 340, w: 100, op: 'x', n: 2, amp: 110, spd: 1.3 }] },
+  { name: 'Clockwork', towers: [twin(110, 230, { every: 2.6, burst: 9, brute: 5 }), twin(290, 230, { every: 2.6, burst: 9, brute: 5 })],
+    obs: [{ k: 'bar', x: 200, y: 330, len: 180, spd: 0.9 }],
+    gates: [{ x: 30, y: 530, w: 100, op: 'x', n: 2 }, { x: 270, y: 530, w: 100, op: 'x', n: 2 },
+            { x: 150, y: 450, w: 100, op: '+', n: 8, amp: 90, spd: 1.4 }, { x: 150, y: 230, w: 100, op: '-', n: 20, amp: 120, spd: 1.1 }] },
+  { name: 'Cog Tyrant', towers: [boss(700, { every: 2.4, burst: 12, brute: 3, amp: 80, spd: 0.7 })],
+    obs: [{ k: 'bar', x: 110, y: 330, len: 110, spd: 2 }, { k: 'bar', x: 290, y: 330, len: 110, spd: -2 }],
+    gates: [{ x: 150, y: 540, w: 100, op: 'x', n: 3, amp: 110, spd: 0.9 }, { x: 40, y: 430, w: 100, op: 'x', n: 2 },
+            { x: 260, y: 430, w: 100, op: 'x', n: 2 }, { x: 150, y: 250, w: 100, op: '-', n: 25 }] },
+  // World 3: Bumper Bay
+  { name: 'Pinball', towers: [tw(200, 420, { every: 2.4, burst: 15, mix: [T.STICK, T.STICK, T.RUNNER] })],
+    obs: [{ k: 'bump', x: 120, y: 430, r: 18 }, { k: 'bump', x: 280, y: 430, r: 18 }, { k: 'bump', x: 200, y: 330, r: 22 }],
+    gates: [{ x: 150, y: 540, w: 100, op: 'x', n: 2 }, { x: 40, y: 360, w: 90, op: 'x', n: 3, amp: 30, spd: 1.5 }, { x: 270, y: 360, w: 90, op: 'x', n: 2 }] },
+  { name: 'Arrow Rain', towers: [tw(200, 460, { every: 2.4, burst: 14, brute: 4, mix: [T.STICK, T.STICK, T.ARCHER] })],
+    obs: [{ k: 'wall', x: 60, y: 300, w: 90, h: 14 }, { k: 'wall', x: 250, y: 300, w: 90, h: 14 }, { k: 'bump', x: 200, y: 450, r: 20 }],
+    gates: [{ x: 30, y: 540, w: 110, op: 'x', n: 2 }, { x: 260, y: 540, w: 110, op: 'x', n: 2 }, { x: 150, y: 380, w: 100, op: 'x', n: 3, amp: 100, spd: 1.2 }] },
+  { name: 'Sprinters', towers: [tw(200, 520, { every: 2.2, burst: 16, mix: [T.RUNNER, T.RUNNER, T.STICK] })],
+    obs: [{ k: 'bar', x: 200, y: 470, len: 140, spd: 1.4 }, { k: 'bump', x: 90, y: 330, r: 18 }, { k: 'bump', x: 310, y: 330, r: 18 }],
+    gates: [{ x: 30, y: 560, w: 110, op: 'x', n: 2 }, { x: 260, y: 560, w: 110, op: '+', n: 8 },
+            { x: 150, y: 380, w: 100, op: 'x', n: 3, amp: 60, spd: 2 }, { x: 150, y: 250, w: 100, op: '-', n: 20 }] },
+  { name: 'Triad', towers: [tri(70, 200, { mix: [T.STICK, T.ARCHER] }), tri(200, 240, { burst: 8, mix: [T.STICK, T.RUNNER] }), tri(330, 200, { mix: [T.STICK, T.ARCHER] })],
+    obs: [{ k: 'bump', x: 135, y: 400, r: 16 }, { k: 'bump', x: 265, y: 400, r: 16 }],
+    gates: [{ x: 150, y: 540, w: 100, op: 'x', n: 3, amp: 120, spd: 1 }, { x: 30, y: 300, w: 100, op: 'x', n: 2 },
+            { x: 150, y: 300, w: 100, op: 'x', n: 2 }, { x: 270, y: 300, w: 100, op: 'x', n: 2 }] },
+  { name: 'Tide Warden', towers: [boss(900, { every: 2.3, burst: 13, brute: 3, amp: 90, spd: 0.8, shield: true, mix: [T.STICK, T.STICK, T.RUNNER, T.ARCHER] })],
+    obs: [{ k: 'bump', x: 100, y: 460, r: 18 }, { k: 'bump', x: 300, y: 460, r: 18 }, { k: 'bump', x: 200, y: 300, r: 20 }],
+    gates: [{ x: 150, y: 560, w: 100, op: 'x', n: 2, amp: 120, spd: 1.2 }, { x: 30, y: 380, w: 110, op: 'x', n: 3 },
+            { x: 260, y: 380, w: 110, op: '-', n: 25 }, { x: 150, y: 440, w: 100, op: '+', n: 10, amp: 80, spd: 1.6 }] },
+  // World 4: Storm Front
+  { name: 'Switchback', towers: [tw(200, 480, { every: 2.2, burst: 11, brute: 4, mix: [T.STICK, T.STICK, T.RUNNER, T.ARCHER] })],
+    obs: [{ k: 'wall', x: 22, y: 470, w: 200, h: 14 }, { k: 'wall', x: 178, y: 350, w: 200, h: 14 }, { k: 'bump', x: 300, y: 230, r: 16 }],
+    gates: [{ x: 240, y: 540, w: 110, op: 'x', n: 2 }, { x: 40, y: 400, w: 110, op: 'x', n: 3 }, { x: 240, y: 280, w: 110, op: 'x', n: 2 }] },
+  { name: 'Twin Mills', towers: [twin(110, 260, { every: 2.5, burst: 8, brute: 6, mix: [T.STICK, T.RUNNER] }), twin(290, 260, { every: 2.5, burst: 8, brute: 6, mix: [T.STICK, T.ARCHER] })],
+    obs: [{ k: 'bar', x: 110, y: 420, len: 120, spd: 1.8 }, { k: 'bar', x: 290, y: 420, len: 120, spd: -1.8 }, { k: 'wall', x: 170, y: 300, w: 60, h: 14 }],
+    gates: [{ x: 150, y: 560, w: 100, op: 'x', n: 3 }, { x: 40, y: 330, w: 100, op: 'x', n: 2, amp: 20, spd: 2 },
+            { x: 260, y: 330, w: 100, op: 'x', n: 2, amp: 20, spd: 2 }, { x: 150, y: 470, w: 100, op: '-', n: 25 }] },
+  { name: 'Gauntlet', towers: [tw(200, 700, { every: 2.1, burst: 18, brute: 3, mix: [T.STICK, T.STICK, T.RUNNER, T.ARCHER] })],
+    obs: [{ k: 'wall', x: 22, y: 560, w: 110, h: 14 }, { k: 'wall', x: 268, y: 560, w: 110, h: 14 },
+          { k: 'bar', x: 200, y: 420, len: 160, spd: 1.5 }, { k: 'bump', x: 80, y: 300, r: 18 }, { k: 'bump', x: 320, y: 300, r: 18 }],
+    gates: [{ x: 150, y: 600, w: 100, op: 'x', n: 2 }, { x: 150, y: 500, w: 100, op: 'x', n: 3, amp: 110, spd: 1.3 },
+            { x: 150, y: 330, w: 100, op: '+', n: 10, amp: 60, spd: 2 }, { x: 30, y: 230, w: 120, op: '-', n: 30 }, { x: 250, y: 230, w: 120, op: 'x', n: 2 }] },
+  { name: 'Triple Threat', towers: [tri(70, 300, { mix: [T.STICK, T.RUNNER] }), tri(200, 340, { burst: 8, brute: 4, mix: [T.STICK, T.ARCHER] }), tri(330, 300, { mix: [T.STICK, T.RUNNER] })],
+    obs: [{ k: 'bar', x: 200, y: 460, len: 150, spd: 1.7 }, { k: 'wall', x: 60, y: 330, w: 70, h: 14, amp: 30, spd: 1.2 },
+          { k: 'wall', x: 270, y: 330, w: 70, h: 14, amp: 30, spd: 1.2 }],
+    gates: [{ x: 30, y: 560, w: 100, op: 'x', n: 2 }, { x: 270, y: 560, w: 100, op: 'x', n: 3 },
+            { x: 150, y: 390, w: 100, op: 'x', n: 2, amp: 120, spd: 1.1 }, { x: 150, y: 250, w: 100, op: '-', n: 25 }] },
+  { name: 'Stormcrown', towers: [boss(1100, { every: 2.0, burst: 15, brute: 2, amp: 100, spd: 0.9, shield: true, mix: [T.STICK, T.RUNNER, T.ARCHER] })],
+    obs: [{ k: 'bar', x: 110, y: 470, len: 110, spd: 2.2 }, { k: 'bar', x: 290, y: 470, len: 110, spd: -2.2 },
+          { k: 'wall', x: 150, y: 340, w: 100, h: 14, amp: 110, spd: 0.8 }, { k: 'bump', x: 200, y: 560, r: 18 }],
+    gates: [{ x: 30, y: 590, w: 110, op: 'x', n: 2 }, { x: 260, y: 590, w: 110, op: 'x', n: 2 },
+            { x: 150, y: 410, w: 100, op: 'x', n: 3, amp: 120, spd: 1.2 }, { x: 40, y: 260, w: 100, op: '+', n: 12 }, { x: 260, y: 260, w: 100, op: '-', n: 30 }] },
 ];
 
 // ---- Unit pool (structure of arrays, no per-frame allocation) ----
 const ux = new Float32Array(MAX), uy = new Float32Array(MAX);
 const uvx = new Float32Array(MAX), uvy = new Float32Array(MAX);
 const uhp = new Float32Array(MAX), ur = new Float32Array(MAX), uspd = new Float32Array(MAX);
-const uph = new Float32Array(MAX);
-const uteam = new Uint8Array(MAX), ubig = new Uint8Array(MAX), alive = new Uint8Array(MAX);
+const uph = new Float32Array(MAX), ucd = new Float32Array(MAX), uair = new Float32Array(MAX);
+const uteam = new Uint8Array(MAX), utype = new Uint8Array(MAX), alive = new Uint8Array(MAX);
 const umask = new Uint32Array(MAX);
 const utgt = new Int32Array(MAX);
 const act = new Int32Array(MAX), pos = new Int32Array(MAX), free = new Int32Array(MAX);
@@ -244,33 +370,54 @@ const count = [0, 0];
 const head = [new Int32Array(COLS * ROWS), new Int32Array(COLS * ROWS)];
 const next = new Int32Array(MAX);
 
+// Draw buckets: units sorted by team and type each frame.
+const bstart = new Int32Array(2 * NT + 1), bcur = new Int32Array(2 * NT), bidx = new Int32Array(MAX);
+
 // Particles (ring buffer).
 const px = new Float32Array(MAXP), py = new Float32Array(MAXP);
 const pvx = new Float32Array(MAXP), pvy = new Float32Array(MAXP);
 const plife = new Float32Array(MAXP), pteam = new Uint8Array(MAXP);
 let pNext = 0;
 
+// Arrows (ring buffer).
+const qx = new Float32Array(MAXQ), qy = new Float32Array(MAXQ);
+const qvx = new Float32Array(MAXQ), qvy = new Float32Array(MAXQ);
+const qlife = new Float32Array(MAXQ), qteam = new Uint8Array(MAXQ);
+let qNext = 0;
+
+// Explosion rings (ring buffer).
+const rx = new Float32Array(MAXR), ry = new Float32Array(MAXR), rlife = new Float32Array(MAXR);
+let rNext = 0;
+
 function resetPools() {
   nAct = 0; nFree = MAX; count[0] = count[1] = 0;
   for (let i = 0; i < MAX; i++) { free[i] = MAX - 1 - i; alive[i] = 0; }
-  plife.fill(0);
+  plife.fill(0); qlife.fill(0); rlife.fill(0);
 }
 
-function spawn(team, x, y, big, mask) {
+function spawn(team, type, x, y, mask) {
   if (nFree === 0) return -1;
-  const i = free[--nFree];
+  const i = free[--nFree], u = UNIT[type];
   ux[i] = x; uy[i] = y; uvx[i] = 0; uvy[i] = 0;
-  uteam[i] = team; ubig[i] = big ? 1 : 0; umask[i] = mask;
-  uhp[i] = big ? (team === 0 ? 12 : 10) : 1;
-  ur[i] = big ? 8 : 3.6;
-  uspd[i] = team === 0 ? (big ? SPEED.oursBig : SPEED.ours) : (big ? SPEED.theirsBig : SPEED.theirs);
-  uspd[i] *= 0.92 + Math.random() * 0.16;
+  uteam[i] = team; utype[i] = type; umask[i] = mask;
+  uhp[i] = u.hp; ur[i] = u.r;
+  uspd[i] = u.spd * (team ? ENEMY_PACE : 1) * (0.92 + Math.random() * 0.16);
   uph[i] = Math.random() * TAU;
+  ucd[i] = 0; uair[i] = 0;
   utgt[i] = -1;
   alive[i] = 1;
   pos[i] = nAct; act[nAct++] = i;
   count[team]++;
   return i;
+}
+
+function puff(x, y, team, n, speed) {
+  for (let k = 0; k < n; k++) {
+    const j = pNext; pNext = (pNext + 1) % MAXP;
+    const a = Math.random() * TAU, s = speed * (0.3 + Math.random() * 0.7);
+    px[j] = x; py[j] = y; pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s;
+    plife[j] = 0.35 + Math.random() * 0.3; pteam[j] = team;
+  }
 }
 
 function kill(i) {
@@ -280,13 +427,7 @@ function kill(i) {
   act[p] = last; pos[last] = p;
   free[nFree++] = i;
   count[uteam[i]]--;
-  const n = ubig[i] ? 10 : 3;
-  for (let k = 0; k < n; k++) {
-    const j = pNext; pNext = (pNext + 1) % MAXP;
-    const a = Math.random() * TAU, s = 30 + Math.random() * 70;
-    px[j] = ux[i]; py[j] = uy[i]; pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s;
-    plife[j] = 0.35 + Math.random() * 0.25; pteam[j] = uteam[i];
-  }
+  puff(ux[i], uy[i], uteam[i], utype[i] >= T.HEAVY ? 10 : 3, 100);
 }
 
 function cellOf(x, y) {
@@ -299,20 +440,21 @@ function cellOf(x, y) {
 function buildGrid() {
   head[0].fill(-1); head[1].fill(-1);
   for (let k = 0; k < nAct; k++) {
-    const i = act[k], c = cellOf(ux[i], uy[i]), h = head[uteam[i]];
+    const i = act[k];
+    if (uair[i] > 0) continue;            // airborne units can't be hit or targeted
+    const c = cellOf(ux[i], uy[i]), h = head[uteam[i]];
     next[i] = h[c]; h[c] = i;
   }
 }
 
-// Nearest unit of the other team within `rad`, or -1.
-function nearestFoe(i, rad) {
-  const h = head[uteam[i] ^ 1];
-  const c = cellOf(ux[i], uy[i]), cx = c % COLS, cy = (c / COLS) | 0;
+// Nearest grounded unit of the other team within `rad` of (x, y), or -1.
+function nearestFoe(team, x, y, rad) {
+  const h = head[team ^ 1];
+  const c = cellOf(x, y), cx = c % COLS, cy = (c / COLS) | 0;
   const cr = Math.ceil(rad / CELL);
   const x0 = Math.max(0, cx - cr), x1 = Math.min(COLS - 1, cx + cr);
   const y0 = Math.max(0, cy - cr), y1 = Math.min(ROWS - 1, cy + cr);
   let best = -1, bd = rad * rad;
-  const x = ux[i], y = uy[i];
   for (let gy = y0; gy <= y1; gy++) {
     for (let gx = x0; gx <= x1; gx++) {
       let j = h[gy * COLS + gx];
@@ -330,43 +472,76 @@ function nearestFoe(i, rad) {
 
 // ---- Game state ----
 let levelIdx = 0, L = LEVELS[0];
+let cannonIdx = 0, CN = CANNONS[0];
 let state = 'menu';        // menu | play | paused | won | lost
 let attract = true;        // demo mode behind the menu
 let t = 0, frame = 0, endT = 0;
 let cannonX = 200, targetX = 200, firing = false, fireT = 0, charge = 0, shots = 0;
-let spawnT = 0, bursts = 0;
 let shake = 0;
-const tower = { hp: 0, max: 0, hit: 0 };
-const base = { hp: 0, max: 0 };
-let gates = [];
+const base = { hp: 0, max: 15 };
+let towers = [], gates = [], obstacles = [];
+let towersLeft = 0;
 let keyL = false, keyR = false, keySpace = false;
+let newCannon = -1;
 
 let unlocked = 0;
 try { unlocked = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem('stickstorm.unlocked') || '0', 10) || 0); } catch (e) {}
-function saveUnlocked() { try { localStorage.setItem('stickstorm.unlocked', String(unlocked)); } catch (e) {} }
+try { cannonIdx = Math.min(CANNONS.length - 1, parseInt(localStorage.getItem('stickstorm.cannon') || '0', 10) || 0); } catch (e) {}
+if (CANNONS[cannonIdx].unlock > unlocked) cannonIdx = 0;
+function save() {
+  try {
+    localStorage.setItem('stickstorm.unlocked', String(unlocked));
+    localStorage.setItem('stickstorm.cannon', String(cannonIdx));
+  } catch (e) {}
+}
 
-function loadLevel(idx, demo) {
+function loadLevel(idx, demo, cIdx) {
   levelIdx = idx; L = LEVELS[idx]; attract = demo;
+  CN = CANNONS[demo ? 0 : cIdx];
   resetPools();
   t = 0; frame = 0; endT = 0;
-  cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0;
-  spawnT = 1.5; bursts = 0; shake = 0;
-  tower.hp = tower.max = L.towerHp; tower.hit = 0;
-  base.hp = base.max = L.baseHp;
+  cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0; shake = 0;
+  base.hp = base.max;
+  towers = L.towers.map(d => ({
+    x: d.x, baseX: d.x, y: d.y, w: d.w, h: d.h, hp: d.hp, max: d.hp, hit: 0,
+    every: d.every, burst: d.burst, mix: d.mix, brute: d.brute, boss: !!d.boss,
+    amp: d.amp || 0, spd: d.spd || 0, shieldOn: !!d.shield, shield: 0, stage: 0,
+    spawnT: 1.5, bursts: 0,
+  }));
+  towersLeft = towers.length;
   gates = L.gates.map((g, k) => ({
     x: g.x, baseX: g.x, y: g.y, w: g.w, op: g.op, n: g.n,
     amp: g.amp || 0, spd: g.spd || 0, phase: k * 1.7,
     left: g.n, broken: 0, cd: 0, flash: 0, bit: 1 << k,
     label: g.op === 'x' ? '×' + g.n : g.op === '+' ? '+' + g.n : '−' + g.n,
   }));
+  obstacles = (L.obs || []).map((o, k) => ({
+    k: o.k === 'wall' ? 0 : o.k === 'bar' ? 1 : 2,
+    x: o.x, baseX: o.x, y: o.y, w: o.w || 0, h: o.h || 0, r: o.r || 0,
+    len: o.len || 0, spd: o.spd || 0, amp: o.amp || 0, a: k * 0.9, flash: 0,
+  }));
+}
+
+function shoot(type) {
+  const i = spawn(0, type, cannonX + (Math.random() - 0.5) * 6, CANNON_Y - 24, 0);
+  if (i >= 0 && CN.pattern === 'lob' && type !== T.HEAVY) uair[i] = 0.9;
+  return i;
 }
 
 function fire() {
   shots++; charge++;
-  const big = charge >= CHARGE_MAX;
-  if (big) charge = 0;
-  const i = spawn(0, cannonX + (Math.random() - 0.5) * 6, CANNON_Y - 24, big, 0);
-  if (i >= 0) uvx[i] = (Math.random() - 0.5) * 24;
+  if (charge >= CN.charge) {
+    charge = 0;
+    const i = shoot(T.HEAVY);
+    if (i >= 0) uvx[i] = 0;
+    return;
+  }
+  if (CN.pattern === 'spread') {
+    for (let d = -1; d <= 1; d++) { const i = shoot(CN.type); if (i >= 0) uvx[i] = d * 75; }
+  } else {
+    const i = shoot(CN.type);
+    if (i >= 0) uvx[i] = (Math.random() - 0.5) * 24;
+  }
 }
 
 function passGate(i, g) {
@@ -381,26 +556,38 @@ function passGate(i, g) {
   let n = 0;
   if (g.op === 'x') n = g.n - 1;
   else if (g.cd <= 0) { n = g.n; g.cd = 0.3; }
+  // Tanks and heavies don't copy themselves; gates turn them into stickmen.
+  const type = utype[i] === T.TANK || utype[i] === T.HEAVY ? T.STICK : utype[i];
   const m = umask[i], x = ux[i], y = uy[i] - 2;
   for (let k = 0; k < n; k++) {
-    const j = spawn(0, x + (Math.random() - 0.5) * 14, y - Math.random() * 6, false, m);
+    const j = spawn(0, type, x + (Math.random() - 0.5) * 14, y - Math.random() * 6, m);
     if (j < 0) break;
     uvx[j] = (Math.random() - 0.5) * 70;
   }
 }
 
-function hitTower(d) {
-  if (tower.hp <= 0) return;
-  tower.hp = Math.max(0, tower.hp - d);
-  tower.hit = 0.1;
-  if (tower.hp === 0) {
+function hitTower(tw, d) {
+  if (tw.hp <= 0) return;
+  tw.hp = Math.max(0, tw.hp - d);
+  tw.hit = 0.1;
+  if (tw.boss) {
+    const f = tw.hp / tw.max;
+    if ((tw.stage === 0 && f <= 0.66) || (tw.stage === 1 && f <= 0.33)) {
+      tw.stage++;
+      spawn(1, T.GIANT, tw.x, tw.y + tw.h / 2 + 20, 0);
+      tw.every *= 0.8;
+      if (tw.shieldOn) tw.shield = 3;
+    }
+  }
+  if (tw.hp === 0) {
+    towersLeft--;
     for (let k = 0; k < 40; k++) {
       const j = pNext; pNext = (pNext + 1) % MAXP;
       const a = Math.random() * TAU, s = 60 + Math.random() * 160;
-      px[j] = TOWER.x + (Math.random() - 0.5) * TOWER.w; py[j] = TOWER.y + (Math.random() - 0.5) * TOWER.h;
+      px[j] = tw.x + (Math.random() - 0.5) * tw.w; py[j] = tw.y + (Math.random() - 0.5) * tw.h;
       pvx[j] = Math.cos(a) * s; pvy[j] = Math.sin(a) * s; plife[j] = 0.8; pteam[j] = 1;
     }
-    endRound('won');
+    if (towersLeft === 0) endRound('won');
   }
 }
 
@@ -411,11 +598,106 @@ function hitBase(d) {
   if (base.hp === 0) endRound('lost');
 }
 
+function explode(i) {
+  const x = ux[i], y = uy[i], team = uteam[i];
+  const j = rNext; rNext = (rNext + 1) % MAXR;
+  rx[j] = x; ry[j] = y; rlife[j] = 0.3;
+  const h = head[team ^ 1];
+  const c = cellOf(x, y), cx = c % COLS, cy = (c / COLS) | 0;
+  for (let gy = Math.max(0, cy - 2); gy <= Math.min(ROWS - 1, cy + 2); gy++) {
+    for (let gx = Math.max(0, cx - 2); gx <= Math.min(COLS - 1, cx + 2); gx++) {
+      let k = h[gy * COLS + gx];
+      while (k !== -1) {
+        const nk = next[k];
+        if (alive[k]) {
+          const dx = ux[k] - x, dy = uy[k] - y, rr = BOMB_RADIUS + ur[k];
+          if (dx * dx + dy * dy < rr * rr) { uhp[k] -= BOMB_DAMAGE; if (uhp[k] <= 0) kill(k); }
+        }
+        k = nk;
+      }
+    }
+  }
+  puff(x, y, team, 12, 160);
+  kill(i);
+}
+
 function endRound(result) {
   if (attract) { endT = 1.2; state = result; return; }
   if (state !== 'play') return;
   state = result; endT = 1.0; firing = false;
-  if (result === 'won' && levelIdx + 1 > unlocked && levelIdx + 1 < LEVELS.length) { unlocked = levelIdx + 1; saveUnlocked(); }
+  newCannon = -1;
+  if (result === 'won' && levelIdx + 1 > unlocked) {
+    const before = unlocked;
+    unlocked = Math.min(LEVELS.length - 1, levelIdx + 1);
+    // Beating the last level counts as one more for unlocks.
+    const beaten = levelIdx + 1;
+    for (let c = 0; c < CANNONS.length; c++) if (CANNONS[c].unlock > before && CANNONS[c].unlock <= beaten) newCannon = c;
+    save();
+  }
+}
+
+function standingTowerNear(x) {
+  let best = null, bd = 1e9;
+  for (let k = 0; k < towers.length; k++) {
+    const tw = towers[k];
+    if (tw.hp <= 0) continue;
+    const d = Math.abs(tw.x - x);
+    if (d < bd) { bd = d; best = tw; }
+  }
+  return best;
+}
+
+// Push unit i out of obstacles; units blocked head-on slide toward the open end of a wall.
+function collide(i, dt) {
+  const r = ur[i];
+  for (let k = 0; k < obstacles.length; k++) {
+    const o = obstacles[k];
+    const x = ux[i], y = uy[i];
+    if (o.k === 0) {
+      const x0 = o.x, x1 = o.x + o.w, y0 = o.y, y1 = o.y + o.h;
+      if (x + r < x0 || x - r > x1 || y + r < y0 || y - r > y1) continue;
+      const cx = x < x0 ? x0 : x > x1 ? x1 : x, cy = y < y0 ? y0 : y > y1 ? y1 : y;
+      const dx = x - cx, dy = y - cy, d2 = dx * dx + dy * dy;
+      if (d2 >= r * r) continue;
+      let vertical;
+      if (d2 > 0) {
+        const d = Math.sqrt(d2);
+        ux[i] = cx + dx / d * r; uy[i] = cy + dy / d * r;
+        vertical = Math.abs(dy) > Math.abs(dx);
+      } else {
+        const l = x - x0, rt = x1 - x, tp = y - y0, bt = y1 - y, m = Math.min(l, rt, tp, bt);
+        vertical = m === tp || m === bt;
+        if (m === tp) uy[i] = y0 - r; else if (m === bt) uy[i] = y1 + r;
+        else if (m === l) ux[i] = x0 - r; else ux[i] = x1 + r;
+      }
+      if (vertical) {
+        let dir = x < (x0 + x1) / 2 ? -1 : 1;
+        if (x0 <= TL + 1) dir = 1; else if (x1 >= TR - 1) dir = -1;
+        ux[i] += dir * uspd[i] * dt;
+        uvx[i] = dir * uspd[i] * 0.6;
+      }
+    } else if (o.k === 1) {
+      const hx = Math.cos(o.a) * o.len / 2, hy = Math.sin(o.a) * o.len / 2;
+      const ax = o.x - hx, ay = o.y - hy;
+      const ex = hx * 2, ey = hy * 2;
+      let s = ((x - ax) * ex + (y - ay) * ey) / (ex * ex + ey * ey);
+      s = s < 0 ? 0 : s > 1 ? 1 : s;
+      const cx = ax + ex * s, cy = ay + ey * s;
+      const dx = x - cx, dy = y - cy, d2 = dx * dx + dy * dy, R = r + 4;
+      if (d2 >= R * R) continue;
+      const d = Math.sqrt(d2) || 0.01;
+      ux[i] = cx + dx / d * (R + 1); uy[i] = cy + dy / d * (R + 1);
+      uvx[i] += dx / d * 60;
+    } else {
+      const dx = x - o.x, dy = y - o.y, d2 = dx * dx + dy * dy, R = o.r + r;
+      if (d2 >= R * R) continue;
+      const d = Math.sqrt(d2) || 0.01;
+      ux[i] = o.x + dx / d * R; uy[i] = o.y + dy / d * R;
+      uvx[i] = (dx < 0 ? -1 : 1) * uspd[i] * 0.9;
+      o.flash = 0.15;
+    }
+  }
+  if (ux[i] < TL + 4) ux[i] = TL + 4; else if (ux[i] > TR - 4) ux[i] = TR - 4;
 }
 
 // ---- Simulation ----
@@ -436,20 +718,28 @@ function update(dt) {
 
   if (playing && firing) {
     fireT -= dt;
-    if (fireT <= 0) { fire(); fireT += 1 / FIRE_RATE; if (fireT < 0) fireT = 0; }
+    if (fireT <= 0) { fire(); fireT += 1 / CN.rate; if (fireT < 0) fireT = 0; }
   } else if (fireT > 0) fireT = Math.max(0, fireT - dt);
 
-  if (playing && tower.hp > 0) {
-    spawnT -= dt;
-    if (spawnT <= 0) {
-      spawnT += L.spawnEvery;
-      bursts++;
+  // Towers: drift, shields, enemy waves.
+  for (let k = 0; k < towers.length; k++) {
+    const tw = towers[k];
+    if (tw.hp <= 0) continue;
+    if (tw.amp) tw.x = Math.max(TL + tw.w / 2, Math.min(TR - tw.w / 2, tw.baseX + Math.sin(t * tw.spd) * tw.amp));
+    if (tw.shield > 0) tw.shield -= dt;
+    if (tw.hit > 0) tw.hit -= dt;
+    if (!playing) continue;
+    tw.spawnT -= dt;
+    if (tw.spawnT <= 0) {
+      tw.spawnT += tw.every;
+      tw.bursts++;
       // Waves grow as the round drags on.
-      const n = Math.round(L.burst * (1 + bursts * 0.04));
-      for (let k = 0; k < n; k++) {
-        spawn(1, TOWER.x + (Math.random() - 0.5) * 110, TOWER.y + TOWER.h / 2 + 6 + Math.random() * 24, false, 0);
+      const n = Math.round(tw.burst * (1 + tw.bursts * 0.04));
+      for (let j = 0; j < n; j++) {
+        const type = tw.mix[(Math.random() * tw.mix.length) | 0];
+        spawn(1, type, tw.x + (Math.random() - 0.5) * tw.w * 0.9, tw.y + tw.h / 2 + 6 + Math.random() * 24, 0);
       }
-      if (L.brute && bursts % L.brute === 0) spawn(1, TOWER.x, TOWER.y + TOWER.h / 2 + 12, true, 0);
+      if (tw.brute && tw.bursts % tw.brute === 0) spawn(1, T.HEAVY, tw.x, tw.y + tw.h / 2 + 12, 0);
     }
   }
 
@@ -460,27 +750,52 @@ function update(dt) {
     if (g.flash > 0) g.flash -= dt;
     if (g.broken > 0) { g.broken -= dt; if (g.broken <= 0) { g.broken = 0; g.left = g.n; } }
   }
+  for (let k = 0; k < obstacles.length; k++) {
+    const o = obstacles[k];
+    if (o.k === 1) o.a += o.spd * dt;
+    if (o.amp) o.x = Math.max(TL, Math.min(TR - o.w, o.baseX + Math.sin(t * o.spd + k) * o.amp));
+    if (o.flash > 0) o.flash -= dt;
+  }
 
   buildGrid();
 
-  // Movement, gates, tower and base contact.
+  // Movement, gates, obstacles, tower and base contact.
   for (let k = nAct - 1; k >= 0; k--) {
     if (k >= nAct) continue;
     const i = act[k];
-    const team = uteam[i], sp = uspd[i];
+    const team = uteam[i], type = utype[i], sp = uspd[i];
     uph[i] += dt * sp * 0.13;
-    if (((frame + i) & 3) === 0) utgt[i] = nearestFoe(i, team === 0 ? 60 : 85);
+    if (ucd[i] > 0) ucd[i] -= dt;
+
+    if (uair[i] > 0) {                      // lobbed: fly straight up, skip everything
+      uair[i] -= dt;
+      uy[i] -= sp * 1.8 * dt;
+      ux[i] += uvx[i] * dt;
+      continue;
+    }
+
+    const archer = type === T.ARCHER;
+    if (((frame + i) & 3) === 0) utgt[i] = nearestFoe(team, ux[i], uy[i], archer ? ARCHER_RANGE : team ? 85 : 60);
     let tg = utgt[i];
-    if (tg >= 0 && (!alive[tg] || uteam[tg] === team)) { tg = -1; utgt[i] = -1; }
+    if (tg >= 0 && (!alive[tg] || uteam[tg] === team || uair[tg] > 0)) { tg = -1; utgt[i] = -1; }
     if (tg >= 0) {
       const dx = ux[tg] - ux[i], dy = uy[tg] - uy[i], d = Math.sqrt(dx * dx + dy * dy) || 1;
-      uvx[i] = dx / d * sp; uvy[i] = dy / d * sp;
+      if (archer) {
+        uvx[i] = 0; uvy[i] = 0;
+        if (ucd[i] <= 0) {
+          ucd[i] = ARCHER_RELOAD;
+          const q = qNext; qNext = (qNext + 1) % MAXQ;
+          qx[q] = ux[i]; qy[q] = uy[i] - 4; qvx[q] = dx / d * ARROW_SPEED; qvy[q] = dy / d * ARROW_SPEED;
+          qlife[q] = 0.55; qteam[q] = team;
+        }
+      } else { uvx[i] = dx / d * sp; uvy[i] = dy / d * sp; }
     } else if (team === 0) {
       uvy[i] = -sp;
-      if (uy[i] < STEER_Y) {
-        let v = (TOWER.x - ux[i]) * 1.6;
+      const tw = standingTowerNear(ux[i]);
+      if (tw && uy[i] < tw.y + 220) {
+        const v = (tw.x - ux[i]) * 1.6;
         uvx[i] = v > sp ? sp : v < -sp ? -sp : v;
-      } else uvx[i] *= Math.max(0, 1 - 3 * dt);
+      } else uvx[i] *= Math.max(0, 1 - 1.5 * dt);
     } else {
       uvy[i] = sp;
       const v = (cannonX - ux[i]) * 0.25, lim = sp * 0.5;
@@ -501,39 +816,89 @@ function update(dt) {
         }
       }
       if (!alive[i]) continue;
-      if (ny <= TOWER.y + TOWER.h / 2 && nx > TOWER.x - TOWER.w / 2 && nx < TOWER.x + TOWER.w / 2) {
-        hitTower(uhp[i]); kill(i);
-      } else if (ny < -10) kill(i);
-    } else if (ny >= BASE_Y) {
-      hitBase(uhp[i]); kill(i);
+    }
+    if (obstacles.length) collide(i, dt);
+
+    if (team === 0) {
+      const x = ux[i], y = uy[i];
+      let done = false;
+      for (let ti = 0; ti < towers.length && !done; ti++) {
+        const tw = towers[ti];
+        if (tw.hp <= 0 || y > tw.y + tw.h / 2 || y < tw.y - tw.h / 2 - 10 || x < tw.x - tw.w / 2 || x > tw.x + tw.w / 2) continue;
+        done = true;
+        if (tw.shield > 0) kill(i);
+        else if (type === T.BOMBER) { hitTower(tw, BOMB_TOWER_DAMAGE); explode(i); }
+        else { hitTower(tw, uhp[i]); kill(i); }
+      }
+      if (!done && y < -10) kill(i);
+    } else if (uy[i] >= BASE_Y) {
+      hitBase(UNIT[type].base); kill(i);
     }
   }
 
-  // Combat: our units against nearby enemies, using the enemy grid.
+  // Combat: our grounded units against nearby enemies, using the enemy grid.
   const eh = head[1];
   for (let k = nAct - 1; k >= 0; k--) {
     if (k >= nAct) continue;
     const i = act[k];
-    if (uteam[i] !== 0) continue;
+    if (uteam[i] !== 0 || uair[i] > 0) continue;
     const c = cellOf(ux[i], uy[i]), cx = c % COLS, cy = (c / COLS) | 0;
     let dead = false;
     for (let gy = Math.max(0, cy - 1); gy <= Math.min(ROWS - 1, cy + 1) && !dead; gy++) {
       for (let gx = Math.max(0, cx - 1); gx <= Math.min(COLS - 1, cx + 1) && !dead; gx++) {
         let j = eh[gy * COLS + gx];
         while (j !== -1) {
+          const nj = next[j];
           if (alive[j]) {
             const dx = ux[j] - ux[i], dy = uy[j] - uy[i], rr = ur[i] + ur[j];
             if (dx * dx + dy * dy < rr * rr) {
+              if (utype[i] === T.BOMBER) { explode(i); dead = true; break; }
               const d = Math.min(uhp[i], uhp[j]);
               uhp[i] -= d; uhp[j] -= d;
               if (uhp[j] <= 0) kill(j);
               if (uhp[i] <= 0) { kill(i); dead = true; break; }
             }
           }
+          j = nj;
+        }
+      }
+    }
+  }
+
+  // Arrows.
+  for (let q = 0; q < MAXQ; q++) {
+    if (qlife[q] <= 0) continue;
+    qlife[q] -= dt;
+    const x = (qx[q] += qvx[q] * dt), y = (qy[q] += qvy[q] * dt);
+    const team = qteam[q], h = head[team ^ 1];
+    const c = cellOf(x, y), cx = c % COLS, cy = (c / COLS) | 0;
+    let hit = false;
+    for (let gy = Math.max(0, cy - 1); gy <= Math.min(ROWS - 1, cy + 1) && !hit; gy++) {
+      for (let gx = Math.max(0, cx - 1); gx <= Math.min(COLS - 1, cx + 1) && !hit; gx++) {
+        let j = h[gy * COLS + gx];
+        while (j !== -1) {
+          if (alive[j]) {
+            const dx = ux[j] - x, dy = uy[j] - y, rr = ur[j] + 2;
+            if (dx * dx + dy * dy < rr * rr) {
+              uhp[j] -= 1;
+              if (uhp[j] <= 0) kill(j);
+              hit = true; break;
+            }
+          }
           j = next[j];
         }
       }
     }
+    if (!hit && team === 0) {
+      for (let ti = 0; ti < towers.length; ti++) {
+        const tw = towers[ti];
+        if (tw.hp > 0 && Math.abs(x - tw.x) < tw.w / 2 && Math.abs(y - tw.y) < tw.h / 2) {
+          if (tw.shield <= 0) hitTower(tw, 1);
+          hit = true; break;
+        }
+      }
+    }
+    if (hit) qlife[q] = 0;
   }
 
   for (let j = 0; j < MAXP; j++) {
@@ -542,14 +907,14 @@ function update(dt) {
     px[j] += pvx[j] * dt; py[j] += pvy[j] * dt;
     pvx[j] *= 0.92; pvy[j] *= 0.92;
   }
+  for (let j = 0; j < MAXR; j++) if (rlife[j] > 0) rlife[j] -= dt;
 
-  if (tower.hit > 0) tower.hit -= dt;
   if (shake > 0) shake -= dt;
 
   if (state === 'won' || state === 'lost') {
     endT -= dt;
     if (endT <= 0) {
-      if (attract) { loadLevel(levelIdx, true); state = 'menu'; }
+      if (attract) { loadLevel(levelIdx, true, 0); state = 'menu'; }
       else if (overlay.hidden) showResult();
     }
   }
@@ -579,30 +944,117 @@ function rrect(x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Batch all stick figures of one team and size into two paths.
-function drawCrowd(team, big) {
-  const s = big ? 2.3 : 1;
+function bucketize() {
+  bstart.fill(0);
+  for (let k = 0; k < nAct; k++) { const i = act[k]; bstart[uteam[i] * NT + utype[i] + 1]++; }
+  for (let b = 0; b < 2 * NT; b++) { bstart[b + 1] += bstart[b]; bcur[b] = bstart[b]; }
+  for (let k = 0; k < nAct; k++) { const i = act[k]; bidx[bcur[uteam[i] * NT + utype[i]]++] = i; }
+}
+
+// One team+type bucket as two batched paths: heads/bodies filled, limbs stroked.
+function drawBucket(team, type) {
+  const b = team * NT + type, s0 = bstart[b], s1 = bstart[b + 1];
+  if (s0 === s1) return;
+  const S = UNIT[type].s, col = TCOL[team][type];
+  ctx.fillStyle = col; ctx.strokeStyle = col;
   ctx.beginPath();
-  for (let k = 0; k < nAct; k++) {
-    const i = act[k];
-    if (uteam[i] !== team || ubig[i] !== big) continue;
-    const x = ux[i], y = uy[i] - 5 * s;
-    ctx.moveTo(x + 2.8 * s, y);
-    ctx.arc(x, y, 2.8 * s, 0, TAU);
+  for (let k = s0; k < s1; k++) {
+    const i = bidx[k], s = S * (1 + uair[i] * 0.8), x = ux[i], y = uy[i];
+    if (type === T.BOMBER) {
+      ctx.moveTo(x + 3.4 * s, y - 1.5 * s); ctx.arc(x, y - 1.5 * s, 3.4 * s, 0, TAU);
+    } else {
+      ctx.moveTo(x + 2.8 * s, y - 5 * s); ctx.arc(x, y - 5 * s, 2.8 * s, 0, TAU);
+      if (type === T.TANK) ctx.rect(x - 2.8 * s, y - 2.4 * s, 5.6 * s, 5 * s);
+    }
   }
   ctx.fill();
   ctx.beginPath();
-  for (let k = 0; k < nAct; k++) {
-    const i = act[k];
-    if (uteam[i] !== team || ubig[i] !== big) continue;
-    const x = ux[i], y = uy[i], w = Math.sin(uph[i]) * 2.2 * s;
-    ctx.moveTo(x, y - 2.2 * s); ctx.lineTo(x, y + 2.4 * s);
+  for (let k = s0; k < s1; k++) {
+    const i = bidx[k], s = S * (1 + uair[i] * 0.8), x = ux[i], y = uy[i], w = Math.sin(uph[i]) * 2.2 * s;
     ctx.moveTo(x, y + 2.4 * s); ctx.lineTo(x - 1.4 * s + w, y + 6.4 * s);
     ctx.moveTo(x, y + 2.4 * s); ctx.lineTo(x + 1.4 * s - w, y + 6.4 * s);
-    ctx.moveTo(x - 2.8 * s, y + 0.4 * s - w * 0.4); ctx.lineTo(x + 2.8 * s, y + 0.4 * s + w * 0.4);
+    if (type === T.BOMBER) {
+      ctx.moveTo(x + 1.6 * s, y - 4.4 * s); ctx.lineTo(x + 3 * s, y - 6.6 * s);
+    } else {
+      ctx.moveTo(x, y - 2.2 * s); ctx.lineTo(x, y + 2.4 * s);
+      ctx.moveTo(x - 2.8 * s, y + 0.4 * s - w * 0.4); ctx.lineTo(x + 2.8 * s, y + 0.4 * s + w * 0.4);
+    }
+    if (type === T.ARCHER) {
+      ctx.moveTo(x + 0.5 * s + 1.63 * s, y - 3.2 * s);
+      ctx.arc(x + 0.5 * s, y, 3.6 * s, -1.1, 1.1);
+    }
+    if (type === T.RUNNER) { ctx.moveTo(x - 4 * s, y - 1 * s); ctx.lineTo(x - 6.5 * s, y - 1 * s); }
   }
-  ctx.lineWidth = 1.7 * s;
+  ctx.lineWidth = 1.7 * S;
   ctx.stroke();
+}
+
+function drawTower(tw) {
+  const hitOff = tw.hit > 0 && !reduceMotion ? (Math.random() - 0.5) * 3 : 0;
+  const x = tw.x + hitOff, tx = x - tw.w / 2, ty = tw.y - tw.h / 2;
+  if (tw.hp <= 0) {
+    ctx.fillStyle = C['lane-line'];
+    ctx.beginPath(); rrect(tx + 8, tw.y + tw.h / 2 - 16, tw.w - 16, 16, 6); ctx.fill();
+    return;
+  }
+  ctx.fillStyle = tw.boss ? C['theirs-deep'] : C.theirs;
+  ctx.beginPath();
+  rrect(tx, ty + 12, tw.w, tw.h - 12, 8);
+  const n = Math.max(3, Math.round(tw.w / 32)), step = tw.w / n;
+  for (let c = 0; c < n; c++) ctx.rect(tx + c * step + step * 0.18, ty, step * 0.64, 16);
+  ctx.fill();
+  if (tw.boss) {
+    ctx.fillStyle = C.ours;
+    ctx.beginPath();
+    for (let c = -1; c <= 1; c++) {
+      const cx = x + c * 26;
+      ctx.moveTo(cx - 9, ty); ctx.lineTo(cx, ty - 14 - (c === 0 ? 6 : 0)); ctx.lineTo(cx + 9, ty);
+    }
+    ctx.fill();
+  }
+  ctx.fillStyle = C.ink;
+  ctx.beginPath(); rrect(x - 15, ty + tw.h - 28, 30, 28, 12); ctx.fill();
+  ctx.fillStyle = C.paper;
+  ctx.font = (tw.w < 110 ? 24 : 30) + 'px ' + FONT;
+  ctx.fillText(String(Math.ceil(tw.hp)), x, ty + tw.h * 0.45);
+  ctx.fillStyle = C.ink; ctx.fillRect(tx, ty - (tw.boss ? 26 : 14), tw.w, 7);
+  ctx.fillStyle = C.theirs; ctx.fillRect(tx, ty - (tw.boss ? 26 : 14), tw.w * tw.hp / tw.max, 7);
+  if (tw.shield > 0) {
+    ctx.globalAlpha = 0.5 + Math.sin(t * 12) * 0.2;
+    ctx.strokeStyle = C.paper; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(x, tw.y, tw.w * 0.62, tw.h * 0.75, 0, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawCannon() {
+  const cx = cannonX, cy = CANNON_Y, p = CN.pattern;
+  ctx.strokeStyle = C['lane-line']; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(cx, cy, 24, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = charge >= CN.charge - 1 ? C.paper : C.ours;
+  ctx.beginPath(); ctx.arc(cx, cy, 24, -Math.PI / 2, -Math.PI / 2 + TAU * charge / CN.charge); ctx.stroke();
+  ctx.fillStyle = C['ours-deep'];
+  ctx.beginPath();
+  if (p === 'spread') {
+    for (let d = -1; d <= 1; d++) {
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(d * 0.45);
+      rrect(-5, -32, 10, 22, 4);
+      ctx.restore();
+    }
+  } else if (p === 'lob') rrect(cx - 11, cy - 28, 22, 18, 6);
+  else if (CN.type === T.RUNNER) { rrect(cx - 10, cy - 34, 7, 26, 3); rrect(cx + 3, cy - 34, 7, 26, 3); }
+  else if (CN.type === T.TANK) rrect(cx - 10, cy - 34, 20, 26, 5);
+  else rrect(cx - 7, cy - 34, 14, 26, 5);
+  ctx.fill();
+  if (CN.type === T.ARCHER) {
+    ctx.strokeStyle = C['ours-deep']; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy - 14, 20, -Math.PI + 0.5, -0.5); ctx.stroke();
+  }
+  ctx.fillStyle = C.ours;
+  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, TAU); ctx.fill();
+  ctx.fillStyle = C.ink;
+  ctx.font = '13px ' + FONT;
+  ctx.fillText(String(CN.charge - charge), cx, cy + 1);
 }
 
 function draw() {
@@ -619,7 +1071,7 @@ function draw() {
   ctx.strokeStyle = C['lane-line']; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.beginPath();
   const off = (t * 40) % 60;
-  for (let y = H + 60 - off; y > TOWER.y + 40; y -= 60) {
+  for (let y = H + 60 - off; y > 150; y -= 60) {
     for (let c = 0; c < 3; c++) {
       const cx = 90 + c * 110;
       ctx.moveTo(cx - 14, y); ctx.lineTo(cx, y - 12); ctx.lineTo(cx + 14, y);
@@ -627,16 +1079,38 @@ function draw() {
   }
   ctx.stroke();
 
-  // Base line.
   ctx.fillStyle = base.hp / base.max < 0.35 ? C.bad : C['lane-line'];
   ctx.fillRect(TL, BASE_Y + 4, TR - TL, 4);
+
+  // Obstacles.
+  for (let k = 0; k < obstacles.length; k++) {
+    const o = obstacles[k];
+    if (o.k === 0) {
+      ctx.fillStyle = C.rock;
+      ctx.beginPath(); rrect(o.x, o.y, o.w, o.h, 5); ctx.fill();
+      ctx.strokeStyle = C['rock-edge']; ctx.lineWidth = 2;
+      ctx.beginPath(); rrect(o.x, o.y, o.w, o.h, 5); ctx.stroke();
+    } else if (o.k === 1) {
+      const hx = Math.cos(o.a) * o.len / 2, hy = Math.sin(o.a) * o.len / 2;
+      ctx.strokeStyle = C['rock-edge']; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.moveTo(o.x - hx, o.y - hy); ctx.lineTo(o.x + hx, o.y + hy); ctx.stroke();
+      ctx.strokeStyle = C.rock; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(o.x - hx, o.y - hy); ctx.lineTo(o.x + hx, o.y + hy); ctx.stroke();
+      ctx.fillStyle = C['rock-edge'];
+      ctx.beginPath(); ctx.arc(o.x, o.y, 7, 0, TAU); ctx.fill();
+    } else {
+      ctx.fillStyle = o.flash > 0 ? C['rock-edge'] : C.rock;
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, TAU); ctx.fill();
+      ctx.strokeStyle = C['rock-edge']; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.r - 5, 0, TAU); ctx.stroke();
+    }
+  }
 
   // Gates.
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (let k = 0; k < gates.length; k++) {
     const g = gates[k];
-    const good = g.op !== '-';
-    const col = good ? C.good : C.bad;
+    const col = g.op !== '-' ? C.good : C.bad;
     const broken = g.broken > 0;
     ctx.globalAlpha = broken ? 0.18 : g.flash > 0 ? 0.55 : 0.32;
     ctx.fillStyle = col;
@@ -650,31 +1124,35 @@ function draw() {
     ctx.globalAlpha = 1;
   }
 
-  // Tower.
-  const tx = TOWER.x - TOWER.w / 2, ty = TOWER.y - TOWER.h / 2;
-  const hitOff = tower.hit > 0 && !reduceMotion ? (Math.random() - 0.5) * 3 : 0;
-  if (tower.hp > 0) {
-    ctx.fillStyle = C.theirs;
-    ctx.beginPath();
-    rrect(tx + hitOff, ty + 12, TOWER.w, TOWER.h - 12, 8);
-    for (let c = 0; c < 4; c++) ctx.rect(tx + hitOff + 4 + c * 32, ty, 20, 16);
-    ctx.fill();
-    ctx.fillStyle = C.ink;
-    ctx.beginPath(); rrect(TOWER.x - 16 + hitOff, ty + TOWER.h - 30, 32, 30, 12); ctx.fill();
-    ctx.fillStyle = C.paper;
-    ctx.font = '30px ' + FONT;
-    ctx.fillText(String(Math.ceil(tower.hp)), TOWER.x + hitOff, ty + 38);
-  }
-  // Tower HP bar.
-  ctx.fillStyle = C.ink; ctx.fillRect(tx, ty - 14, TOWER.w, 7);
-  ctx.fillStyle = C.theirs; ctx.fillRect(tx, ty - 14, TOWER.w * tower.hp / tower.max, 7);
+  for (let k = 0; k < towers.length; k++) drawTower(towers[k]);
 
   // Crowds.
+  bucketize();
   ctx.lineCap = 'round';
-  ctx.fillStyle = C.theirs; ctx.strokeStyle = C.theirs;
-  drawCrowd(1, 0); drawCrowd(1, 1);
-  ctx.fillStyle = C.ours; ctx.strokeStyle = C.ours;
-  drawCrowd(0, 0); drawCrowd(0, 1);
+  for (let ty = 0; ty < NT; ty++) drawBucket(1, ty);
+  for (let ty = 0; ty < NT; ty++) drawBucket(0, ty);
+
+  // Arrows.
+  ctx.lineWidth = 1.5;
+  for (let team = 0; team < 2; team++) {
+    ctx.strokeStyle = team ? C['theirs-light'] : C['ours-light'];
+    ctx.beginPath();
+    for (let q = 0; q < MAXQ; q++) {
+      if (qlife[q] <= 0 || qteam[q] !== team) continue;
+      ctx.moveTo(qx[q], qy[q]); ctx.lineTo(qx[q] - qvx[q] * 0.022, qy[q] - qvy[q] * 0.022);
+    }
+    ctx.stroke();
+  }
+
+  // Explosion rings.
+  ctx.strokeStyle = C['ours-hot']; ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let j = 0; j < MAXR; j++) {
+    if (rlife[j] <= 0) continue;
+    const rad = BOMB_RADIUS * (1.15 - rlife[j] / 0.3 * 0.6);
+    ctx.moveTo(rx[j] + rad, ry[j]); ctx.arc(rx[j], ry[j], rad, 0, TAU);
+  }
+  ctx.stroke();
 
   // Particles.
   for (let team = 0; team < 2; team++) {
@@ -688,28 +1166,11 @@ function draw() {
     ctx.fill();
   }
 
-  // Cannon with charge ring.
-  const cx = cannonX, cy = CANNON_Y;
-  ctx.strokeStyle = C['lane-line']; ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.arc(cx, cy, 24, 0, TAU); ctx.stroke();
-  ctx.strokeStyle = charge >= CHARGE_MAX - 1 ? C.paper : C.ours;
-  ctx.beginPath(); ctx.arc(cx, cy, 24, -Math.PI / 2, -Math.PI / 2 + TAU * charge / CHARGE_MAX); ctx.stroke();
-  ctx.fillStyle = C['ours-deep'];
-  ctx.beginPath(); rrect(cx - 7, cy - 34, 14, 26, 5); ctx.fill();
-  ctx.fillStyle = C.ours;
-  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, TAU); ctx.fill();
-  ctx.fillStyle = C.ink;
-  ctx.font = '13px ' + FONT;
-  ctx.fillText(String(CHARGE_MAX - charge), cx, cy + 1);
+  drawCannon();
 
   // HUD.
+  const by = H - 34;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = C.muted; ctx.font = '13px ' + FONT;
-  ctx.fillText('LEVEL ' + (levelIdx + 1), TL + 4, 24);
-  ctx.fillStyle = C.paper; ctx.font = '18px ' + FONT;
-  ctx.fillText(L.name, TL + 4, 44);
-
-  const by = H - 30;
   ctx.fillStyle = C.muted; ctx.font = '13px ' + FONT;
   ctx.fillText('BASE', TL + 4, by - 6);
   ctx.textAlign = 'right';
@@ -717,9 +1178,11 @@ function draw() {
   ctx.fillStyle = C.ink; ctx.fillRect(TL + 4, by, TR - TL - 8, 8);
   ctx.fillStyle = base.hp / base.max < 0.35 ? C.bad : C.good;
   ctx.fillRect(TL + 4, by, (TR - TL - 8) * base.hp / base.max, 8);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = C.paper; ctx.font = '14px ' + FONT;
+  ctx.fillText((levelIdx + 1) + ' · ' + L.name.toUpperCase() + '   ' + CN.name.toUpperCase(), W / 2, H - 10);
 
   if (state === 'play' && shots === 0) {
-    ctx.textAlign = 'center';
     ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.3;
     ctx.fillStyle = C.paper; ctx.font = '22px ' + FONT;
     ctx.fillText('Drag to aim · hold to fire', W / 2, CANNON_Y - 70);
@@ -767,38 +1230,74 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && sta
 
 // ---- Menus ----
 const overlay = document.getElementById('overlay');
-const menuEl = document.getElementById('menu'), resultEl = document.getElementById('result'), pausedEl = document.getElementById('paused');
+const panels = ['menu', 'pick', 'result', 'paused'].map(id => document.getElementById(id));
+const [menuEl, pickEl, resultEl, pausedEl] = panels;
 const pauseBtn = document.getElementById('pauseBtn');
 const levelsEl = document.getElementById('levels');
+const cannonsEl = document.getElementById('cannons');
+let pickLevel = 0;
 
 function showPanel(el) {
   overlay.hidden = !el;
-  for (const p of [menuEl, resultEl, pausedEl]) p.hidden = p !== el;
+  for (const p of panels) p.hidden = p !== el;
   pauseBtn.hidden = !!el;
 }
 
 function renderLevels() {
   levelsEl.textContent = '';
   LEVELS.forEach((lv, i) => {
+    if (i % 5 === 0) {
+      const h = document.createElement('div');
+      h.className = 'world';
+      h.textContent = WORLDS[i / 5];
+      levelsEl.appendChild(h);
+    }
+    const isBoss = lv.towers.some(d => d.boss);
     const b = document.createElement('button');
-    b.className = 'lvl' + (i < unlocked ? ' done' : '');
+    b.className = 'lvl' + (i < unlocked ? ' done' : '') + (isBoss ? ' boss' : '');
     b.disabled = i > unlocked;
+    b.setAttribute('aria-label', 'Level ' + (i + 1) + ', ' + lv.name);
     b.innerHTML = '<b>' + (i + 1) + '</b><span></span>';
-    b.querySelector('span').textContent = i > unlocked ? 'Locked' : lv.name;
-    b.addEventListener('click', () => startLevel(i));
+    b.querySelector('span').textContent = isBoss ? 'Boss' : lv.towers.length > 1 ? lv.towers.length + ' towers' : ' ';
+    b.addEventListener('click', () => showPick(i));
     levelsEl.appendChild(b);
+  });
+}
+
+function renderCannons() {
+  cannonsEl.textContent = '';
+  CANNONS.forEach((c, i) => {
+    const b = document.createElement('button');
+    const locked = c.unlock > unlocked;
+    b.className = 'cannon' + (i === cannonIdx ? ' on' : '');
+    b.disabled = locked;
+    b.setAttribute('aria-pressed', String(i === cannonIdx));
+    b.innerHTML = '<b></b><span></span><i></i>';
+    b.querySelector('b').textContent = c.name;
+    b.querySelector('span').textContent = locked ? 'Beat level ' + c.unlock + ' to unlock' : c.desc;
+    b.querySelector('i').textContent = locked ? '' : (c.pattern === 'spread' ? c.rate + ' volleys/s' : c.rate + ' shots/s');
+    b.addEventListener('click', () => { cannonIdx = i; save(); renderCannons(); });
+    cannonsEl.appendChild(b);
   });
 }
 
 function showMenu() {
   renderLevels();
-  loadLevel(unlocked, true);
+  loadLevel(unlocked, true, 0);
   state = 'menu';
   showPanel(menuEl);
 }
 
-function startLevel(i) {
-  loadLevel(i, false);
+function showPick(i) {
+  pickLevel = i;
+  document.getElementById('pickEyebrow').textContent = 'Level ' + (i + 1) + ' · ' + LEVELS[i].name;
+  renderCannons();
+  showPanel(pickEl);
+}
+
+function startLevel(i, c) {
+  if (c !== undefined) cannonIdx = c;
+  loadLevel(i, false, cannonIdx);
   state = 'play';
   showPanel(null);
 }
@@ -809,18 +1308,26 @@ function showResult() {
   const won = state === 'won';
   const lastLevel = levelIdx === LEVELS.length - 1;
   document.getElementById('resEyebrow').textContent = 'Level ' + (levelIdx + 1) + ' · ' + L.name;
-  document.getElementById('resTitle').textContent = won ? (lastLevel ? 'Every tower is down' : 'Tower down') : 'Base overrun';
-  document.getElementById('resText').textContent = won
+  document.getElementById('resTitle').textContent = won
+    ? (lastLevel ? 'Every tower is down' : towers.length > 1 ? 'Towers down' : 'Tower down')
+    : 'Base overrun';
+  let text = won
     ? shots + ' shots fired, base at ' + base.hp + ' of ' + base.max + '.'
-    : 'The tower still had ' + Math.ceil(tower.hp) + ' of ' + tower.max + ' left.';
+    : 'Towers still had ' + towers.reduce((s, tw) => s + Math.ceil(tw.hp), 0) + ' HP left.';
+  if (won && newCannon >= 0) text += ' New cannon unlocked: ' + CANNONS[newCannon].name + '.';
+  document.getElementById('resText').textContent = text;
   const primary = document.getElementById('resPrimary');
   primary.textContent = won ? (lastLevel ? 'Play again' : 'Next level') : 'Retry';
-  primary.onclick = () => startLevel(won ? (lastLevel ? 0 : levelIdx + 1) : levelIdx);
+  const nextIdx = won ? (lastLevel ? 0 : levelIdx + 1) : levelIdx;
+  primary.onclick = () => startLevel(nextIdx);
+  document.getElementById('resCannon').onclick = () => showPick(nextIdx);
   showPanel(resultEl);
   primary.focus({ preventScroll: true });
 }
 
 pauseBtn.addEventListener('click', pause);
+document.getElementById('pickStart').addEventListener('click', () => startLevel(pickLevel));
+document.getElementById('pickBack').addEventListener('click', showMenu);
 document.getElementById('resMenu').addEventListener('click', showMenu);
 document.getElementById('pResume').addEventListener('click', () => { state = 'play'; showPanel(null); });
 document.getElementById('pRestart').addEventListener('click', () => startLevel(levelIdx));
@@ -834,8 +1341,12 @@ try {
 } catch (e) {}
 
 // Debug hook for testing.
-window.__stickstorm = { get state() { return state; }, get crowd() { return count[0]; }, get enemies() { return count[1]; }, get tower() { return tower.hp; }, get base() { return base.hp; }, startLevel, LEVELS,
-  step(n, aimX) { for (let k = 0; k < n; k++) { if (aimX !== undefined) targetX = aimX(t); if (state === 'play') firing = true; update(1 / 60); } } };
+window.__stickstorm = {
+  get state() { return state; }, get crowd() { return count[0]; }, get enemies() { return count[1]; },
+  get tower() { return towers.reduce((s, tw) => s + tw.hp, 0); }, get base() { return base.hp; },
+  startLevel, LEVELS, CANNONS, draw,
+  step(n, aimX) { for (let k = 0; k < n; k++) { if (aimX !== undefined) targetX = aimX(t); if (state === 'play') firing = true; update(1 / 60); } },
+};
 
 resize();
 showMenu();
