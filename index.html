@@ -227,6 +227,23 @@ h2 {
 .res-coins { margin: 0; font-size: 15px; font-weight: 800; color: var(--ours); }
 .lvl em { font-style: normal; font-size: 10px; line-height: 1; letter-spacing: 1px; color: var(--ours); }
 .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.seg {
+  align-self: center;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 12px;
+  border: 2px solid var(--lane-line);
+  background: var(--lane);
+}
+.seg button {
+  padding: 8px 14px;
+  border: 0; border-radius: 9px;
+  background: none;
+  color: var(--muted);
+  font: 16px/1 var(--font-display);
+  cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--ours); color: var(--ink); }
 .btn {
   flex: 1 1 140px;
   padding: 14px 18px;
@@ -251,6 +268,7 @@ button:focus-visible { outline: 3px solid var(--good); outline-offset: 3px; }
     <p class="wallet"><span class="coins">0</span></p>
     <h1>Stickstorm</h1>
     <p class="tag">Fire your crowd through the gates and knock down every tower before their army reaches you.</p>
+    <div class="seg" id="diff" role="group" aria-label="Difficulty"></div>
     <div class="levels" id="levels"></div>
     <p class="how">Drag to slide the cannon. Hold to keep firing. Win levels and earn stars for coins, then buy and upgrade cannons.</p>
   </div>
@@ -581,10 +599,12 @@ function clearReward(i) { return (20 + 10 * (i + 1)) * (isBossLevel(i) ? 2 : 1);
 function starReward(i) { return 15 + 5 * (i + 1); }
 function chargeFor(c, n) { return Math.max(5, Math.round(c.charge * (1 - 0.12 * n))); }
 let hpMul = 1, heavyBonus = 0, foeMul = 1;
+// Difficulty scales each level's heat; heat never drops below 1.
+const DIFFS = [{ name: 'Easy', k: 0.6 }, { name: 'Normal', k: 1 }, { name: 'Hard', k: 1.15 }];
 let earned = { clear: 0, stars: 0, count: 0 };
 
 function freshSave() {
-  return { v: 1, coins: 0, unlocked: 0, cannon: 0,
+  return { v: 1, coins: 0, unlocked: 0, cannon: 0, diff: 1,
     owned: CANNONS.map((c, i) => i === 0), up: CANNONS.map(() => [0, 0, 0]), stars: LEVELS.map(() => 0) };
 }
 function loadSave() {
@@ -594,6 +614,7 @@ function loadSave() {
     if (raw) {
       const d = JSON.parse(raw);
       sv.coins = Math.max(0, d.coins | 0);
+      sv.diff = d.diff === 0 || d.diff === 2 ? d.diff : 1;
       sv.unlocked = Math.max(0, Math.min(LEVELS.length - 1, d.unlocked | 0));
       sv.cannon = Math.max(0, Math.min(CANNONS.length - 1, d.cannon | 0));
       CANNONS.forEach((c, i) => {
@@ -633,11 +654,12 @@ function loadLevel(idx, demo, cIdx) {
   t = 0; frame = 0; endT = 0;
   cannonX = targetX = 200; firing = false; fireT = 0; charge = 0; shots = 0; shake = 0; recoil = 0; hurt = 0;
   base.hp = base.max;
-  const hpOf = d => Math.round(d.hp * (1 + (L.heat - 1) / 2));
-  foeMul = Math.sqrt(L.heat);
+  const heat = demo ? L.heat : Math.max(1, L.heat * DIFFS[SAVE.diff].k);
+  const hpOf = d => Math.round(d.hp * (1 + (heat - 1) / 2));
+  foeMul = Math.sqrt(heat);
   towers = L.towers.map(d => ({
     x: d.x, baseX: d.x, y: d.y, w: d.w, h: d.h, hp: hpOf(d), max: hpOf(d), hit: 0,
-    every: d.every, burst: d.burst * Math.sqrt(L.heat), mix: d.mix, brute: d.brute, boss: !!d.boss,
+    every: d.every, burst: d.burst * Math.sqrt(heat), mix: d.mix, brute: d.brute, boss: !!d.boss,
     amp: d.amp || 0, spd: d.spd || 0, shieldOn: !!d.shield, shield: 0, stage: 0,
     spawnT: 1.5, bursts: 0, flash: 0, dmg: 0, dmgT: 0, fall: 0,
   }));
@@ -1586,7 +1608,7 @@ function draw() {
   ctx.fillRect(TL + 4, by, (TR - TL - 8) * base.hp / base.max, 8);
   ctx.textAlign = 'center';
   ctx.fillStyle = C.paper; ctx.font = '14px ' + FONT;
-  ctx.fillText((levelIdx + 1) + ' · ' + L.name.toUpperCase() + '   ' + CN.name.toUpperCase(), W / 2, H - 10);
+  ctx.fillText((levelIdx + 1) + ' · ' + L.name.toUpperCase() + '   ' + CN.name.toUpperCase() + (attract ? '' : '   ' + DIFFS[SAVE.diff].name.toUpperCase()), W / 2, H - 10);
 
   if (state === 'play' && shots === 0) {
     ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.3;
@@ -1777,7 +1799,20 @@ function renderUpgrades() {
 }
 function showUpgrades(c) { upCannon = c; renderUpgrades(); showPanel(upEl); }
 
+function renderDiff() {
+  const el = document.getElementById('diff');
+  el.textContent = '';
+  DIFFS.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.textContent = d.name;
+    b.setAttribute('aria-pressed', String(i === SAVE.diff));
+    b.addEventListener('click', () => { SAVE.diff = i; save(); renderDiff(); });
+    el.appendChild(b);
+  });
+}
+
 function showMenu() {
+  renderDiff();
   renderLevels();
   updateCoins();
   loadLevel(unlocked, true, 0);
@@ -1860,7 +1895,7 @@ window.__stickstorm = {
   get state() { return state; }, get crowd() { return count[0]; }, get enemies() { return count[1]; },
   get tower() { return towers.reduce((s, tw) => s + tw.hp, 0); }, get base() { return base.hp; },
   startLevel, LEVELS, CANNONS, draw, SAVE, buyCannon, buyUpgrade,
-  get coins() { return SAVE.coins; }, set coins(v) { SAVE.coins = v; save(); }, setBase(v) { base.hp = v; },
+  get coins() { return SAVE.coins; }, get towerMax() { return towers.reduce((a, tw) => a + tw.max, 0); }, set coins(v) { SAVE.coins = v; save(); }, setBase(v) { base.hp = v; },
   get earned() { return earned; },
   step(n, aimX) { for (let k = 0; k < n; k++) { if (aimX !== undefined) targetX = aimX(t); if (state === 'play') firing = true; update(1 / 60); } },
 };
