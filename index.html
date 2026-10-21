@@ -33,6 +33,18 @@
   --bad: #ff7a45;
   --paper: #f3f6ff;
   --muted: #9fb0d6;
+  --outline: #0d1428;
+  --shadow: rgba(4, 8, 20, 0.32);
+  --steel: #a9b8d8;
+  --wood: #c98b4b;
+  --bomb: #2a3350;
+  --rail: #3b5591;
+  --sky-top: #0b1226;
+  --sky-low: #2a3d6b;
+  --field-1: #1b3a36;
+  --field-2: #2a2840;
+  --field-3: #143349;
+  --field-4: #2b1d3d;
   --scrim: rgba(16, 24, 44, 0.8);
   --font-display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
   --font-body: "Nunito", ui-rounded, system-ui, -apple-system, sans-serif;
@@ -227,7 +239,8 @@ const ENEMY_PACE = 0.45;                 // enemies walk at this fraction of our
 const rootStyle = getComputedStyle(document.documentElement);
 const C = {};
 for (const k of ['ink', 'lane', 'lane-line', 'rock', 'rock-edge', 'ours', 'ours-light', 'ours-deep', 'ours-hot',
-  'theirs', 'theirs-light', 'theirs-deep', 'good', 'bad', 'paper', 'muted']) {
+  'theirs', 'theirs-light', 'theirs-deep', 'good', 'bad', 'paper', 'muted', 'outline', 'shadow', 'steel', 'wood',
+  'bomb', 'rail', 'sky-top', 'sky-low', 'field-1', 'field-2', 'field-3', 'field-4']) {
   C[k] = rootStyle.getPropertyValue('--' + k).trim();
 }
 const FONT = rootStyle.getPropertyValue('--font-display').trim();
@@ -370,8 +383,6 @@ const count = [0, 0];
 const head = [new Int32Array(COLS * ROWS), new Int32Array(COLS * ROWS)];
 const next = new Int32Array(MAX);
 
-// Draw buckets: units sorted by team and type each frame.
-const bstart = new Int32Array(2 * NT + 1), bcur = new Int32Array(2 * NT), bidx = new Int32Array(MAX);
 
 // Particles (ring buffer).
 const px = new Float32Array(MAXP), py = new Float32Array(MAXP);
@@ -520,6 +531,7 @@ function loadLevel(idx, demo, cIdx) {
     x: o.x, baseX: o.x, y: o.y, w: o.w || 0, h: o.h || 0, r: o.r || 0,
     len: o.len || 0, spd: o.spd || 0, amp: o.amp || 0, a: k * 0.9, flash: 0,
   }));
+  buildProps();
 }
 
 function shoot(type) {
@@ -935,127 +947,352 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 
-function rrect(x, y, w, h, r) {
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
+// Camera: the track tilts away from the player. proj(x, y, z) maps a ground point
+// (x, y) raised by z into screen space (PX, PY) with scale PS; far is small and high.
+const HORIZON_Y = 84, DEPTH = 0.75, CX = W / 2;
+function sAt(y) { return 1 / (1 + (H - y) / H * DEPTH); }
+const S_FAR = sAt(0), GY = (H - HORIZON_Y) / (1 - S_FAR), Y0 = H - GY;
+const S_CANNON = sAt(CANNON_Y);
+let PX = 0, PY = 0, PS = 1;
+function proj(x, y, z) { const s = sAt(y); PS = s; PX = CX + (x - CX) * s; PY = Y0 + GY * s - z * s; }
+function lineTo3(x, y, z) { proj(x, y, z); ctx.lineTo(PX, PY); }
+function moveTo3(x, y, z) { proj(x, y, z); ctx.moveTo(PX, PY); }
+
+function rrectOn(g, x, y, w, h, r) {
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+function rrect(x, y, w, h, r) { rrectOn(ctx, x, y, w, h, r); }
+
+function groundQuad(x0, y0, x1, y1, z) {
+  moveTo3(x0, y0, z); lineTo3(x1, y0, z); lineTo3(x1, y1, z); lineTo3(x0, y1, z); ctx.closePath();
 }
 
-function bucketize() {
-  bstart.fill(0);
-  for (let k = 0; k < nAct; k++) { const i = act[k]; bstart[uteam[i] * NT + utype[i] + 1]++; }
-  for (let b = 0; b < 2 * NT; b++) { bstart[b + 1] += bstart[b]; bcur[b] = bstart[b]; }
-  for (let k = 0; k < nAct; k++) { const i = act[k]; bidx[bcur[uteam[i] * NT + utype[i]]++] = i; }
+// A box standing on the ground: the side facing the centre line, the top, then the front.
+function box(x0, y0, x1, y1, z, top, front, side) {
+  if (x1 < CX || x0 > CX) {
+    const sx = x1 < CX ? x1 : x0;
+    ctx.fillStyle = side;
+    ctx.beginPath(); moveTo3(sx, y1, 0); lineTo3(sx, y0, 0); lineTo3(sx, y0, z); lineTo3(sx, y1, z); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = top;
+  ctx.beginPath(); groundQuad(x0, y0, x1, y1, z); ctx.fill();
+  ctx.fillStyle = front;
+  ctx.beginPath(); moveTo3(x0, y1, 0); lineTo3(x1, y1, 0); lineTo3(x1, y1, z); lineTo3(x0, y1, z); ctx.closePath(); ctx.fill();
 }
 
-// One team+type bucket as two batched paths: heads/bodies filled, limbs stroked.
-function drawBucket(team, type) {
-  const b = team * NT + type, s0 = bstart[b], s1 = bstart[b + 1];
-  if (s0 === s1) return;
-  const S = UNIT[type].s, col = TCOL[team][type];
-  ctx.fillStyle = col; ctx.strokeStyle = col;
-  ctx.beginPath();
-  for (let k = s0; k < s1; k++) {
-    const i = bidx[k], s = S * (1 + uair[i] * 0.8), x = ux[i], y = uy[i];
-    if (type === T.BOMBER) {
-      ctx.moveTo(x + 3.4 * s, y - 1.5 * s); ctx.arc(x, y - 1.5 * s, 3.4 * s, 0, TAU);
-    } else {
-      ctx.moveTo(x + 2.8 * s, y - 5 * s); ctx.arc(x, y - 5 * s, 2.8 * s, 0, TAU);
-      if (type === T.TANK) ctx.rect(x - 2.8 * s, y - 2.4 * s, 5.6 * s, 5 * s);
+// ---- Character sprites ----
+// Each team+type is drawn once into an atlas, 4 walking frames per row.
+// Our crowd walks away from the camera (back view); enemies face it.
+const SPR = 3.2, CELL_W = 18, CELL_H = 25, FOOT = 22, DRAW_K = 1.35;
+const atlas = document.createElement('canvas');
+const spr = new Array(2 * NT).fill(null);
+
+function drawChar(g, team, type, f) {
+  const main = TCOL[team][type];
+  const light = team ? C['theirs-light'] : C['ours-light'];
+  const deep = team ? C['theirs-deep'] : C['ours-deep'];
+  const front = team === 1;
+  const sw = f === 1 ? 1 : f === 3 ? -1 : 0;
+  const shape = (path, fill) => { g.beginPath(); path(); g.fillStyle = fill; g.fill(); g.stroke(); };
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  g.lineWidth = 1.1; g.strokeStyle = C.outline;
+  g.fillStyle = C.shadow;
+  g.beginPath(); g.ellipse(0, 0, 6, 2.2, 0, 0, TAU); g.fill();
+
+  if (type === T.BOMBER) {
+    shape(() => { g.rect(-3.2, -3.5 + sw, 2.2, 3.5 - sw); g.rect(1, -3.5 - sw, 2.2, 3.5 + sw); }, deep);
+    shape(() => g.arc(0, -8.5, 5.6, 0, TAU), C.bomb);
+    g.strokeStyle = main; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(-5.2, -7.6); g.quadraticCurveTo(0, -4.8, 5.2, -7.6); g.stroke();
+    g.strokeStyle = C.wood; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(1.5, -13.8); g.quadraticCurveTo(3, -16, 4.6, -16.4); g.stroke();
+    g.fillStyle = C['ours-hot'];
+    g.beginPath(); g.arc(4.8, -16.6, 1.3 + (f & 1) * 0.5, 0, TAU); g.fill();
+    if (front) {
+      g.fillStyle = C.paper;
+      g.beginPath(); g.arc(-1.9, -9.6, 1.2, 0, TAU); g.arc(1.9, -9.6, 1.2, 0, TAU); g.fill();
+    }
+    g.globalAlpha = 0.3; g.fillStyle = C.paper;
+    g.beginPath(); g.arc(-2.3, -11, 1.5, 0, TAU); g.fill(); g.globalAlpha = 1;
+    return;
+  }
+
+  const wide = type === T.TANK ? 10 : type === T.RUNNER ? 6 : type >= T.HEAVY ? 9.5 : 7.5;
+  const lx = wide * 0.24;
+  if (type === T.TANK && !front) shape(() => rrectOn(g, -6.6, -12.6, 13.2, 9, 2), C.steel);
+  shape(() => {
+    g.rect(-lx - 1.1, -4.5 + sw * 1.2, 2.2, 4.5 - sw * 1.2);
+    g.rect(lx - 1.1, -4.5 - sw * 1.2, 2.2, 4.5 + sw * 1.2);
+  }, deep);
+  shape(() => g.arc(-wide / 2 - 0.4, -8 - sw, 1.6, 0, TAU), light);
+  shape(() => g.arc(wide / 2 + 0.4, -8 + sw, 1.6, 0, TAU), light);
+  shape(() => rrectOn(g, -wide / 2, -12, wide, 8.2, 3), main);
+  if (!front) shape(() => rrectOn(g, -2.4, -11.2, 4.8, 4.6, 1.2), deep);
+  else { g.strokeStyle = deep; g.beginPath(); g.moveTo(-wide / 2 + 0.6, -6.2); g.lineTo(wide / 2 - 0.6, -6.2); g.stroke(); g.strokeStyle = C.outline; }
+
+  const hr = type >= T.HEAVY ? 4.2 : 3.8;
+  shape(() => g.arc(0, -15, hr, 0, TAU), light);
+  if (front) {
+    g.fillStyle = C.outline;
+    g.beginPath(); g.arc(-1.4, -15.2, 0.7, 0, TAU); g.arc(1.4, -15.2, 0.7, 0, TAU); g.fill();
+  }
+  g.globalAlpha = 0.45; g.fillStyle = C.paper;
+  g.beginPath(); g.arc(-1.3, -16.5, 1.1, 0, TAU); g.fill(); g.globalAlpha = 1;
+
+  if (type === T.RUNNER) {
+    g.strokeStyle = C.paper; g.lineWidth = 1.3;
+    g.beginPath(); g.moveTo(-3.6, -16); g.lineTo(3.6, -16); g.moveTo(-3.4, -16); g.lineTo(-6.4, -14.8 + sw); g.stroke();
+    g.strokeStyle = C.outline; g.lineWidth = 1.1;
+  } else if (type === T.TANK) {
+    shape(() => { g.arc(0, -15.4, 4.1, Math.PI, 0); g.closePath(); }, C.steel);
+    if (front) {
+      shape(() => rrectOn(g, -5.6, -11.6, 11.2, 8, 2), C.steel);
+      shape(() => g.arc(0, -7.6, 1.3, 0, TAU), C.paper);
+    }
+  } else if (type === T.ARCHER) {
+    shape(() => { g.moveTo(-4.2, -14.2); g.quadraticCurveTo(0, -22.5, 4.2, -14.2); g.quadraticCurveTo(0, -17.2, -4.2, -14.2); }, deep);
+    g.strokeStyle = C.wood; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(front ? 3 : 3.6, front ? -8.5 : -11, 5.6, -1.25, 1.25); g.stroke();
+    g.strokeStyle = C.outline; g.lineWidth = 1.1;
+  } else if (type === T.HEAVY) {
+    shape(() => { g.arc(0, -15.6, 4.4, Math.PI, 0); g.closePath(); }, C.steel);
+    shape(() => { g.moveTo(-4.2, -16); g.lineTo(-6.6, -20.4); g.lineTo(-2.6, -18.6); g.closePath(); }, C.paper);
+    shape(() => { g.moveTo(4.2, -16); g.lineTo(6.6, -20.4); g.lineTo(2.6, -18.6); g.closePath(); }, C.paper);
+  } else if (type === T.GIANT) {
+    shape(() => {
+      g.moveTo(-4, -17.6); g.lineTo(-4.4, -21.4); g.lineTo(-2, -19.4); g.lineTo(0, -22.2);
+      g.lineTo(2, -19.4); g.lineTo(4.4, -21.4); g.lineTo(4, -17.6); g.closePath();
+    }, C.ours);
+  }
+}
+
+function buildSprites() {
+  let y = 0, wmax = 0;
+  for (let team = 0; team < 2; team++) {
+    for (let type = 0; type < NT; type++) {
+      if (team === 0 && type === T.GIANT) continue;
+      const k = UNIT[type].s * DRAW_K * SPR, cw = Math.ceil(CELL_W * k), ch = Math.ceil(CELL_H * k);
+      spr[team * NT + type] = { sy: y, cw, ch, k };
+      y += ch; wmax = Math.max(wmax, cw * 4);
     }
   }
-  ctx.fill();
-  ctx.beginPath();
-  for (let k = s0; k < s1; k++) {
-    const i = bidx[k], s = S * (1 + uair[i] * 0.8), x = ux[i], y = uy[i], w = Math.sin(uph[i]) * 2.2 * s;
-    ctx.moveTo(x, y + 2.4 * s); ctx.lineTo(x - 1.4 * s + w, y + 6.4 * s);
-    ctx.moveTo(x, y + 2.4 * s); ctx.lineTo(x + 1.4 * s - w, y + 6.4 * s);
-    if (type === T.BOMBER) {
-      ctx.moveTo(x + 1.6 * s, y - 4.4 * s); ctx.lineTo(x + 3 * s, y - 6.6 * s);
-    } else {
-      ctx.moveTo(x, y - 2.2 * s); ctx.lineTo(x, y + 2.4 * s);
-      ctx.moveTo(x - 2.8 * s, y + 0.4 * s - w * 0.4); ctx.lineTo(x + 2.8 * s, y + 0.4 * s + w * 0.4);
+  atlas.width = wmax; atlas.height = y;
+  const g = atlas.getContext('2d');
+  for (let b = 0; b < 2 * NT; b++) {
+    const sp = spr[b];
+    if (!sp) continue;
+    for (let f = 0; f < 4; f++) {
+      g.setTransform(sp.k, 0, 0, sp.k, f * sp.cw + sp.cw / 2, sp.sy + FOOT * sp.k);
+      drawChar(g, (b / NT) | 0, b % NT, f);
     }
-    if (type === T.ARCHER) {
-      ctx.moveTo(x + 0.5 * s + 1.63 * s, y - 3.2 * s);
-      ctx.arc(x + 0.5 * s, y, 3.6 * s, -1.1, 1.1);
-    }
-    if (type === T.RUNNER) { ctx.moveTo(x - 4 * s, y - 1 * s); ctx.lineTo(x - 6.5 * s, y - 1 * s); }
   }
-  ctx.lineWidth = 1.7 * S;
-  ctx.stroke();
+}
+
+function drawUnit(i) {
+  const type = utype[i], sp = spr[uteam[i] * NT + type];
+  const z = uair[i] > 0 ? Math.sin((1 - uair[i] / 0.9) * Math.PI) * 60 : 0;
+  proj(ux[i], uy[i], z);
+  const u = UNIT[type].s * DRAW_K * PS, f = ((uph[i] * 0.6) | 0) & 3;
+  ctx.drawImage(atlas, f * sp.cw, sp.sy, sp.cw, sp.ch, PX - CELL_W / 2 * u, PY - FOOT * u, CELL_W * u, CELL_H * u);
+}
+
+// ---- Depth ordering ----
+// Units are counting-sorted into depth bins; the few props (towers, obstacles, gates)
+// are kept sorted and drawn as the sweep passes them, far to near.
+const NB = 128, BY0 = -40, BY1 = H + 40, BIN = (BY1 - BY0) / NB;
+const binStart = new Int32Array(NB + 1), binCur = new Int32Array(NB), binIdx = new Int32Array(MAX);
+function binOf(y) { const b = ((y - BY0) / BIN) | 0; return b < 0 ? 0 : b >= NB ? NB - 1 : b; }
+function binUnits() {
+  binStart.fill(0);
+  for (let k = 0; k < nAct; k++) binStart[binOf(uy[act[k]]) + 1]++;
+  for (let b = 0; b < NB; b++) { binStart[b + 1] += binStart[b]; binCur[b] = binStart[b]; }
+  for (let k = 0; k < nAct; k++) { const i = act[k]; binIdx[binCur[binOf(uy[i])]++] = i; }
+}
+
+let props = [];
+function buildProps() {
+  props = [];
+  for (const tw of towers) props.push({ k: 0, ref: tw, d: 0 });
+  for (const o of obstacles) props.push({ k: 1, ref: o, d: 0 });
+  for (const g of gates) props.push({ k: 2, ref: g, d: 0 });
+}
+function sortProps() {
+  for (let n = 0; n < props.length; n++) {
+    const p = props[n], r = p.ref;
+    p.d = p.k === 0 ? r.y + r.h / 2 : p.k === 2 ? r.y : r.k === 0 ? r.y + r.h : r.y;
+  }
+  for (let n = 1; n < props.length; n++) {
+    const p = props[n];
+    let m = n - 1;
+    while (m >= 0 && props[m].d > p.d) { props[m + 1] = props[m]; m--; }
+    props[m + 1] = p;
+  }
+}
+
+function drawProp(p) {
+  if (p.k === 0) drawTower(p.ref);
+  else if (p.k === 2) drawGate(p.ref);
+  else drawObstacle(p.ref);
 }
 
 function drawTower(tw) {
   const hitOff = tw.hit > 0 && !reduceMotion ? (Math.random() - 0.5) * 3 : 0;
-  const x = tw.x + hitOff, tx = x - tw.w / 2, ty = tw.y - tw.h / 2;
+  const x = tw.x + hitOff, x0 = x - tw.w / 2, x1 = x + tw.w / 2, yf = tw.y - tw.h / 2, yn = tw.y + tw.h / 2;
   if (tw.hp <= 0) {
-    ctx.fillStyle = C['lane-line'];
-    ctx.beginPath(); rrect(tx + 8, tw.y + tw.h / 2 - 16, tw.w - 16, 16, 6); ctx.fill();
+    box(x0 + 10, yn - 24, x1 - 10, yn, 10, C['rock-edge'], C.rock, C['lane-line']);
     return;
   }
-  ctx.fillStyle = tw.boss ? C['theirs-deep'] : C.theirs;
+  const Z = tw.h * 1.15;
+  const front = tw.boss ? C['theirs-deep'] : C.theirs;
+  box(x0, yf, x1, yn, Z, C['theirs-light'], front, C['theirs-deep']);
+  // Battlements along the front edge.
+  proj(x0, yn, Z);
+  const fx = PX, fy = PY, s = PS, fw = tw.w * s;
+  const n = Math.max(3, Math.round(tw.w / 32)), step = fw / n;
+  ctx.fillStyle = front;
   ctx.beginPath();
-  rrect(tx, ty + 12, tw.w, tw.h - 12, 8);
-  const n = Math.max(3, Math.round(tw.w / 32)), step = tw.w / n;
-  for (let c = 0; c < n; c++) ctx.rect(tx + c * step + step * 0.18, ty, step * 0.64, 16);
+  for (let c = 0; c < n; c++) ctx.rect(fx + c * step + step * 0.18, fy - 12 * s, step * 0.64, 12.5 * s);
   ctx.fill();
   if (tw.boss) {
     ctx.fillStyle = C.ours;
     ctx.beginPath();
     for (let c = -1; c <= 1; c++) {
-      const cx = x + c * 26;
-      ctx.moveTo(cx - 9, ty); ctx.lineTo(cx, ty - 14 - (c === 0 ? 6 : 0)); ctx.lineTo(cx + 9, ty);
+      const cx = fx + fw / 2 + c * 26 * s;
+      ctx.moveTo(cx - 9 * s, fy - 12 * s); ctx.lineTo(cx, fy - (28 + (c === 0 ? 8 : 0)) * s); ctx.lineTo(cx + 9 * s, fy - 12 * s);
     }
     ctx.fill();
   }
+  proj(x, yn, 0);
   ctx.fillStyle = C.ink;
-  ctx.beginPath(); rrect(x - 15, ty + tw.h - 28, 30, 28, 12); ctx.fill();
+  ctx.beginPath(); rrect(PX - 15 * PS, PY - 32 * PS, 30 * PS, 32 * PS, 13 * PS); ctx.fill();
+  proj(x, yn, Z * 0.62);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = C.paper;
-  ctx.font = (tw.w < 110 ? 24 : 30) + 'px ' + FONT;
-  ctx.fillText(String(Math.ceil(tw.hp)), x, ty + tw.h * 0.45);
-  ctx.fillStyle = C.ink; ctx.fillRect(tx, ty - (tw.boss ? 26 : 14), tw.w, 7);
-  ctx.fillStyle = C.theirs; ctx.fillRect(tx, ty - (tw.boss ? 26 : 14), tw.w * tw.hp / tw.max, 7);
+  ctx.font = Math.round((tw.w < 110 ? 26 : 32) * PS) + 'px ' + FONT;
+  ctx.fillText(String(Math.ceil(tw.hp)), PX, PY);
+  proj(x, yf, Z);
+  const by = PY - (tw.boss ? 40 : 24) * PS, bw = tw.w * PS * 0.9;
+  ctx.fillStyle = C.ink; ctx.fillRect(PX - bw / 2, by, bw, 6);
+  ctx.fillStyle = C.theirs; ctx.fillRect(PX - bw / 2, by, bw * tw.hp / tw.max, 6);
   if (tw.shield > 0) {
+    proj(x, tw.y, Z * 0.5);
     ctx.globalAlpha = 0.5 + Math.sin(t * 12) * 0.2;
     ctx.strokeStyle = C.paper; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(x, tw.y, tw.w * 0.62, tw.h * 0.75, 0, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(PX, PY, tw.w * 0.7 * PS, (Z * 0.5 + 34) * PS, 0, 0, TAU); ctx.stroke();
     ctx.globalAlpha = 1;
   }
 }
 
+function drawObstacle(o) {
+  if (o.k === 0) {
+    box(o.x, o.y, o.x + o.w, o.y + o.h, 16, C['rock-edge'], C.rock, C['lane-line']);
+  } else if (o.k === 1) {
+    const hx = Math.cos(o.a) * o.len / 2, hy = Math.sin(o.a) * o.len / 2;
+    proj(o.x, o.y, 0);
+    const bx = PX, by = PY, bs = PS;
+    ctx.fillStyle = C.shadow;
+    ctx.beginPath(); ctx.ellipse(bx, by, 9 * bs, 4 * bs, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = C['lane-line'];
+    ctx.fillRect(bx - 4 * bs, by - 10 * bs, 8 * bs, 10 * bs);
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = C.outline; ctx.lineWidth = 11 * bs;
+    ctx.beginPath(); moveTo3(o.x - hx, o.y - hy, 10); lineTo3(o.x + hx, o.y + hy, 10); ctx.stroke();
+    ctx.strokeStyle = C['rock-edge']; ctx.lineWidth = 7 * bs;
+    ctx.beginPath(); moveTo3(o.x - hx, o.y - hy, 10); lineTo3(o.x + hx, o.y + hy, 10); ctx.stroke();
+    proj(o.x, o.y, 10);
+    ctx.fillStyle = C.paper;
+    ctx.beginPath(); ctx.arc(PX, PY, 3.5 * PS, 0, TAU); ctx.fill();
+  } else {
+    const ry0 = Y0 + GY * sAt(o.y - o.r), ry1 = Y0 + GY * sAt(o.y + o.r);
+    proj(o.x, o.y, 0);
+    const cx = PX, cy = PY, rx = o.r * PS, ry = (ry1 - ry0) / 2, zt = 14 * PS;
+    ctx.fillStyle = C.shadow;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 2, rx + 3, ry + 2, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = C.rock;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI); ctx.rect(cx - rx, cy - zt, rx * 2, zt); ctx.fill();
+    ctx.fillStyle = o.flash > 0 ? C.paper : C['rock-edge'];
+    ctx.beginPath(); ctx.ellipse(cx, cy - zt, rx, ry, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = C.rock; ctx.lineWidth = 2.5 * PS;
+    ctx.beginPath(); ctx.ellipse(cx, cy - zt, rx * 0.6, ry * 0.6, 0, 0, TAU); ctx.stroke();
+  }
+}
+
+// Gates are archways: a glowing floor strip, two posts and a banner with the label.
+function drawGate(g) {
+  const col = g.op !== '-' ? C.good : C.bad;
+  const broken = g.broken > 0;
+  ctx.globalAlpha = broken ? 0.1 : g.flash > 0 ? 0.5 : 0.24;
+  ctx.fillStyle = col;
+  ctx.beginPath(); groundQuad(g.x, g.y - 9, g.x + g.w, g.y + 9, 0); ctx.fill();
+  ctx.globalAlpha = broken ? 0.35 : 1;
+  proj(g.x, g.y, 0);
+  const lx = PX, ly = PY, s = PS;
+  proj(g.x + g.w, g.y, 0);
+  const rxp = PX;
+  const top = ly - 48 * s, bot = ly - 26 * s;
+  ctx.strokeStyle = C.outline; ctx.lineWidth = 6 * s; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx, top); ctx.moveTo(rxp, ly); ctx.lineTo(rxp, top); ctx.stroke();
+  ctx.strokeStyle = col; ctx.lineWidth = 3.5 * s;
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx, top); ctx.moveTo(rxp, ly); ctx.lineTo(rxp, top); ctx.stroke();
+  ctx.fillStyle = g.flash > 0 ? C.paper : col;
+  ctx.beginPath(); rrect(lx - 2 * s, top - 2 * s, rxp - lx + 4 * s, bot - top + 4 * s, 4 * s); ctx.fill();
+  ctx.strokeStyle = C.outline; ctx.lineWidth = 1.5;
+  ctx.beginPath(); rrect(lx - 2 * s, top - 2 * s, rxp - lx + 4 * s, bot - top + 4 * s, 4 * s); ctx.stroke();
+  ctx.fillStyle = C.ink;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = Math.round(21 * s) + 'px ' + FONT;
+  ctx.fillText(g.op === '-' ? (broken ? 'broken' : '−' + g.left) : g.label, (lx + rxp) / 2, (top + bot) / 2 + 1);
+  ctx.globalAlpha = 1;
+}
+
 function drawCannon() {
-  const cx = cannonX, cy = CANNON_Y, p = CN.pattern;
+  const p = CN.pattern;
+  proj(cannonX, CANNON_Y, 0);
+  ctx.save();
+  ctx.translate(PX, PY); ctx.scale(PS, PS);
+  ctx.fillStyle = C.shadow;
+  ctx.beginPath(); ctx.ellipse(0, 10, 30, 11, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = C['ours-deep'];
+  ctx.beginPath(); ctx.ellipse(0, 6, 24, 10, 0, 0, TAU); ctx.fill();
   ctx.strokeStyle = C['lane-line']; ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.arc(cx, cy, 24, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, -4, 24, 0, TAU); ctx.stroke();
   ctx.strokeStyle = charge >= CN.charge - 1 ? C.paper : C.ours;
-  ctx.beginPath(); ctx.arc(cx, cy, 24, -Math.PI / 2, -Math.PI / 2 + TAU * charge / CN.charge); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, -4, 24, -Math.PI / 2, -Math.PI / 2 + TAU * charge / CN.charge); ctx.stroke();
   ctx.fillStyle = C['ours-deep'];
   ctx.beginPath();
   if (p === 'spread') {
     for (let d = -1; d <= 1; d++) {
-      ctx.save(); ctx.translate(cx, cy); ctx.rotate(d * 0.45);
+      ctx.save(); ctx.translate(0, -4); ctx.rotate(d * 0.45);
       rrect(-5, -32, 10, 22, 4);
       ctx.restore();
     }
-  } else if (p === 'lob') rrect(cx - 11, cy - 28, 22, 18, 6);
-  else if (CN.type === T.RUNNER) { rrect(cx - 10, cy - 34, 7, 26, 3); rrect(cx + 3, cy - 34, 7, 26, 3); }
-  else if (CN.type === T.TANK) rrect(cx - 10, cy - 34, 20, 26, 5);
-  else rrect(cx - 7, cy - 34, 14, 26, 5);
+  } else if (p === 'lob') rrect(-11, -32, 22, 18, 6);
+  else if (CN.type === T.RUNNER) { rrect(-10, -38, 7, 26, 3); rrect(3, -38, 7, 26, 3); }
+  else if (CN.type === T.TANK) rrect(-10, -38, 20, 26, 5);
+  else rrect(-7, -38, 14, 26, 5);
   ctx.fill();
   if (CN.type === T.ARCHER) {
-    ctx.strokeStyle = C['ours-deep']; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(cx, cy - 14, 20, -Math.PI + 0.5, -0.5); ctx.stroke();
+    ctx.strokeStyle = C.wood; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, -18, 20, -Math.PI + 0.5, -0.5); ctx.stroke();
   }
   ctx.fillStyle = C.ours;
-  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -4, 17, 0, TAU); ctx.fill();
+  ctx.globalAlpha = 0.4; ctx.fillStyle = C.paper;
+  ctx.beginPath(); ctx.arc(-6, -10, 5, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
   ctx.fillStyle = C.ink;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '13px ' + FONT;
-  ctx.fillText(String(CN.charge - charge), cx, cy + 1);
+  ctx.fillText(String(CN.charge - charge), 0, -3);
+  ctx.restore();
 }
+
+let skyGrad = null;
+const FIELDS = [C['field-1'], C['field-2'], C['field-3'], C['field-4']];
 
 function draw() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1065,94 +1302,67 @@ function draw() {
   if (shake > 0 && !reduceMotion) { sx = (Math.random() - 0.5) * 6; sy = (Math.random() - 0.5) * 6; }
   ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * (offX + sx * scale), dpr * (offY + sy * scale));
 
-  // Track with scrolling chevrons.
+  // Sky, field and the tilted track.
+  if (!skyGrad) {
+    skyGrad = ctx.createLinearGradient(0, -200, 0, HORIZON_Y);
+    skyGrad.addColorStop(0, C['sky-top']); skyGrad.addColorStop(1, C['sky-low']);
+  }
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(-W, -400, W * 3, HORIZON_Y + 400);
+  const field = FIELDS[Math.min(3, (levelIdx / 5) | 0)];
+  ctx.fillStyle = field;
+  // Distant hills on the horizon.
+  ctx.globalAlpha = 0.55;
+  ctx.beginPath(); ctx.moveTo(-W, HORIZON_Y);
+  for (let x = -W; x <= W * 2; x += 12) ctx.lineTo(x, HORIZON_Y - 14 - Math.sin(x * 0.019) * 9 - Math.sin(x * 0.047 + 1) * 5);
+  ctx.lineTo(W * 2, HORIZON_Y); ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillRect(-W, HORIZON_Y, W * 3, H + 400);
   ctx.fillStyle = C.lane;
-  ctx.beginPath(); rrect(TL, 0, TR - TL, H, 18); ctx.fill();
-  ctx.strokeStyle = C['lane-line']; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); groundQuad(TL, 0, TR, H + 60, 0); ctx.fill();
+  ctx.fillStyle = C['lane-line'];
   ctx.beginPath();
-  const off = (t * 40) % 60;
-  for (let y = H + 60 - off; y > 150; y -= 60) {
-    for (let c = 0; c < 3; c++) {
-      const cx = 90 + c * 110;
-      ctx.moveTo(cx - 14, y); ctx.lineTo(cx, y - 12); ctx.lineTo(cx + 14, y);
-    }
-  }
-  ctx.stroke();
+  const off = (t * 40) % 80;
+  for (let y = H + 60 - off; y > -40; y -= 80) groundQuad(TL, Math.max(0, y - 40), TR, Math.max(0, y), 0);
+  ctx.fill();
+  ctx.fillStyle = C.rail;
+  ctx.beginPath(); groundQuad(TL - 8, 0, TL, H + 60, 0); groundQuad(TR, 0, TR + 8, H + 60, 0); ctx.fill();
+  ctx.fillStyle = base.hp / base.max < 0.35 ? C.bad : C.rail;
+  ctx.beginPath(); groundQuad(TL, BASE_Y + 4, TR, BASE_Y + 9, 0); ctx.fill();
 
-  ctx.fillStyle = base.hp / base.max < 0.35 ? C.bad : C['lane-line'];
-  ctx.fillRect(TL, BASE_Y + 4, TR - TL, 4);
-
-  // Obstacles.
-  for (let k = 0; k < obstacles.length; k++) {
-    const o = obstacles[k];
-    if (o.k === 0) {
-      ctx.fillStyle = C.rock;
-      ctx.beginPath(); rrect(o.x, o.y, o.w, o.h, 5); ctx.fill();
-      ctx.strokeStyle = C['rock-edge']; ctx.lineWidth = 2;
-      ctx.beginPath(); rrect(o.x, o.y, o.w, o.h, 5); ctx.stroke();
-    } else if (o.k === 1) {
-      const hx = Math.cos(o.a) * o.len / 2, hy = Math.sin(o.a) * o.len / 2;
-      ctx.strokeStyle = C['rock-edge']; ctx.lineWidth = 10;
-      ctx.beginPath(); ctx.moveTo(o.x - hx, o.y - hy); ctx.lineTo(o.x + hx, o.y + hy); ctx.stroke();
-      ctx.strokeStyle = C.rock; ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.moveTo(o.x - hx, o.y - hy); ctx.lineTo(o.x + hx, o.y + hy); ctx.stroke();
-      ctx.fillStyle = C['rock-edge'];
-      ctx.beginPath(); ctx.arc(o.x, o.y, 7, 0, TAU); ctx.fill();
-    } else {
-      ctx.fillStyle = o.flash > 0 ? C['rock-edge'] : C.rock;
-      ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, TAU); ctx.fill();
-      ctx.strokeStyle = C['rock-edge']; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(o.x, o.y, o.r - 5, 0, TAU); ctx.stroke();
-    }
-  }
-
-  // Gates.
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  for (let k = 0; k < gates.length; k++) {
-    const g = gates[k];
-    const col = g.op !== '-' ? C.good : C.bad;
-    const broken = g.broken > 0;
-    ctx.globalAlpha = broken ? 0.18 : g.flash > 0 ? 0.55 : 0.32;
-    ctx.fillStyle = col;
-    ctx.beginPath(); rrect(g.x, g.y - 13, g.w, 26, 7); ctx.fill();
-    ctx.globalAlpha = broken ? 0.35 : 1;
-    ctx.strokeStyle = col; ctx.lineWidth = 2.5;
-    ctx.beginPath(); rrect(g.x, g.y - 13, g.w, 26, 7); ctx.stroke();
-    ctx.fillStyle = C.paper;
-    ctx.font = '20px ' + FONT;
-    ctx.fillText(g.op === '-' ? (broken ? 'broken' : '−' + g.left) : g.label, g.x + g.w / 2, g.y + 1);
-    ctx.globalAlpha = 1;
-  }
-
-  for (let k = 0; k < towers.length; k++) drawTower(towers[k]);
-
-  // Crowds.
-  bucketize();
-  ctx.lineCap = 'round';
-  for (let ty = 0; ty < NT; ty++) drawBucket(1, ty);
-  for (let ty = 0; ty < NT; ty++) drawBucket(0, ty);
-
-  // Arrows.
-  ctx.lineWidth = 1.5;
-  for (let team = 0; team < 2; team++) {
-    ctx.strokeStyle = team ? C['theirs-light'] : C['ours-light'];
-    ctx.beginPath();
-    for (let q = 0; q < MAXQ; q++) {
-      if (qlife[q] <= 0 || qteam[q] !== team) continue;
-      ctx.moveTo(qx[q], qy[q]); ctx.lineTo(qx[q] - qvx[q] * 0.022, qy[q] - qvy[q] * 0.022);
-    }
-    ctx.stroke();
-  }
-
-  // Explosion rings.
+  // Explosion rings on the ground.
   ctx.strokeStyle = C['ours-hot']; ctx.lineWidth = 3;
   ctx.beginPath();
   for (let j = 0; j < MAXR; j++) {
     if (rlife[j] <= 0) continue;
     const rad = BOMB_RADIUS * (1.15 - rlife[j] / 0.3 * 0.6);
-    ctx.moveTo(rx[j] + rad, ry[j]); ctx.arc(rx[j], ry[j], rad, 0, TAU);
+    proj(rx[j], ry[j], 0);
+    ctx.moveTo(PX + rad * PS, PY); ctx.ellipse(PX, PY, rad * PS, rad * PS * 0.5, 0, 0, TAU);
   }
   ctx.stroke();
+
+  // Everything that stands up, far to near.
+  sortProps();
+  binUnits();
+  let pi = 0;
+  for (let b = 0; b < NB; b++) {
+    const limit = BY0 + (b + 1) * BIN;
+    while (pi < props.length && props[pi].d < limit) drawProp(props[pi++]);
+    for (let k = binStart[b]; k < binStart[b + 1]; k++) drawUnit(binIdx[k]);
+  }
+  while (pi < props.length) drawProp(props[pi++]);
+
+  // Arrows.
+  ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+  for (let team = 0; team < 2; team++) {
+    ctx.strokeStyle = team ? C['theirs-light'] : C['ours-light'];
+    ctx.beginPath();
+    for (let q = 0; q < MAXQ; q++) {
+      if (qlife[q] <= 0 || qteam[q] !== team) continue;
+      moveTo3(qx[q], qy[q], 10); lineTo3(qx[q] - qvx[q] * 0.025, qy[q] - qvy[q] * 0.025, 10);
+    }
+    ctx.stroke();
+  }
 
   // Particles.
   for (let team = 0; team < 2; team++) {
@@ -1160,8 +1370,9 @@ function draw() {
     ctx.beginPath();
     for (let j = 0; j < MAXP; j++) {
       if (plife[j] <= 0 || pteam[j] !== team) continue;
-      const s = 1 + plife[j] * 5;
-      ctx.rect(px[j] - s / 2, py[j] - s / 2, s, s);
+      proj(px[j], py[j], 8);
+      const s = (1 + plife[j] * 5) * PS;
+      ctx.rect(PX - s / 2, PY - s / 2, s, s);
     }
     ctx.fill();
   }
@@ -1185,7 +1396,7 @@ function draw() {
   if (state === 'play' && shots === 0) {
     ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.3;
     ctx.fillStyle = C.paper; ctx.font = '22px ' + FONT;
-    ctx.fillText('Drag to aim · hold to fire', W / 2, CANNON_Y - 70);
+    ctx.fillText('Drag to aim · hold to fire', W / 2, CANNON_Y - 110);
     ctx.globalAlpha = 1;
   }
 }
@@ -1203,7 +1414,8 @@ function loop(now) {
 // ---- Input ----
 function worldX(clientX) {
   const r = cv.getBoundingClientRect();
-  return (clientX - r.left - offX) / scale;
+  // Convert from the tilted view back to track coordinates at the cannon's depth.
+  return CX + ((clientX - r.left - offX) / scale - CX) / S_CANNON;
 }
 cv.addEventListener('pointerdown', e => {
   if (state !== 'play') return;
@@ -1348,6 +1560,7 @@ window.__stickstorm = {
   step(n, aimX) { for (let k = 0; k < n; k++) { if (aimX !== undefined) targetX = aimX(t); if (state === 'play') firing = true; update(1 / 60); } },
 };
 
+buildSprites();
 resize();
 showMenu();
 requestAnimationFrame(loop);
